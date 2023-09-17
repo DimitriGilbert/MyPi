@@ -1,0 +1,339 @@
+#!/bin/bash
+# @parseArger-begin
+# @parseArger-help "add line to fstab\n external ntfs drive eg:\n\tPARTUUID=<partition uuid> /media/my_drive     ntfs-3g    nofail,uid=1000,gid=1000  0       0" --option "help" --short-option "h"
+# @parseArger-verbose --option "verbose" --level "0" --quiet-option "quiet"
+# @parseArger-declarations
+# @parseArger opt config "config file path" --default-value "__home__/.config/MyPi"
+# @parseArger opt line "/etc/fstab entry" --short l --repeat
+# @parseArger opt file-system "The device or file system to be mounted" --repeat --alias fs
+# @parseArger opt mount-point "The directory where the file system should be mounted" --repeat --alias mount
+# @parseArger opt type "The type of file system" --repeat
+# @parseArger opt options "The mount options for the file system" --repeat
+# @parseArger opt dump "This field is used by the dump, 0 to disable" --repeat
+# @parseArger opt pass "This field is used by the fsck, 0 to disable" --repeat
+# @parseArger flag use-config "use a config file" --on --no-alias no-config
+# @parseArger-declarations-end
+
+# @parseArger-utils
+_helpHasBeenPrinted=1;
+_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)";
+# @parseArger-utils-end
+
+# @parseArger-parsing
+die()
+{
+	local _ret="${2:-1}"
+	test "${_PRINT_HELP:-no}" = yes && print_help >&2
+	log "$1" -3 >&2
+	exit "${_ret}"
+}
+
+
+begins_with_short_option()
+{
+	local first_option all_short_options=''
+	first_option="${1:0:1}"
+	test "$all_short_options" = "${all_short_options/$first_option/}" && return 1 || return 0
+}
+
+# POSITIONALS ARGUMENTS
+_positionals=();
+# OPTIONALS ARGUMENTS
+_arg_config="__home__/.config/MyPi"
+_arg_line=()
+_arg_file_system=()
+_arg_mount_point=()
+_arg_type=()
+_arg_options=()
+_arg_dump=()
+_arg_pass=()
+# FLAGS
+_arg_use_config="on"
+_verbose_level="0";
+
+
+
+print_help()
+{
+	_triggerSCHelp=1;
+
+	if [[ "$_helpHasBeenPrinted" == "1" ]]; then
+		_helpHasBeenPrinted=0;
+		echo -e "add line to fstab
+ external ntfs drive eg:
+	PARTUUID=<partition uuid> /media/my_drive     ntfs-3g    nofail,uid=1000,gid=1000  0       0:"
+	echo -e "	--config <config>: config file path [default: ' __home__/.config/MyPi ']"
+	echo -e "	-l, --line <line>: /etc/fstab entry, repeatable"
+	echo -e "	--file-system|--fs <file-system>: The device or file system to be mounted, repeatable"
+	echo -e "	--mount-point|--mount <mount-point>: The directory where the file system should be mounted, repeatable"
+	echo -e "	--type <type>: The type of file system, repeatable"
+	echo -e "	--options <options>: The mount options for the file system, repeatable"
+	echo -e "	--dump <dump>: This field is used by the dump, 0 to disable, repeatable"
+	echo -e "	--pass <pass>: This field is used by the fsck, 0 to disable, repeatable"
+	echo -e "	--use-config|--no-use-config: use a config file, on by default (use --no-use-config to turn it off)
+		no-aliases: --no-config,"
+	echo -e "Usage :
+	$0 [--config <value>] [--line <value>] [--file-system <value>] [--mount-point <value>] [--type <value>] [--options <value>] [--dump <value>] [--pass <value>] [--[no-]use-config]";
+	fi
+
+}
+
+log() {
+	local _arg_msg="${1}";
+	local _arg_level="${2:"0"}";
+	if [ "${_arg_level}" -le "${_verbose_level}" ]; then
+		case "$_arg_level" in
+			-3)
+				_arg_COLOR="\033[0;31m";
+				;;
+			-2)
+				_arg_COLOR="\033[0;33m";
+				;;
+			-1)
+				_arg_COLOR="\033[1;33m";
+				;;
+			1)
+				_arg_COLOR="\033[0;32m";
+				;;
+			2)
+				_arg_COLOR="\033[1;36m";
+				;;
+			3)
+				_arg_COLOR="\033[0;36m";
+				;;
+			*)
+				_arg_COLOR="\033[0m";
+				;;
+		esac
+		echo -e "${_arg_COLOR}${_arg_msg}\033[0m";
+	fi
+}
+
+parse_commandline()
+{
+	_positionals_count=0
+	while test $# -gt 0
+	do
+		_key="$1"
+		case "$_key" in
+			--config)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_config="$2"
+				shift
+				;;
+			--config=*)
+				_arg_config="${_key##--config=}"
+				;;
+			
+			-l|--line)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_line+=("$2")
+				shift
+				;;
+			--line=*)
+				_arg_line+=("${_key##--line=}")
+				;;
+			-l*)
+				_arg_line+=("${_key##-l}")
+				;;
+			
+			--fs|--file-system)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_file_system+=("$2")
+				shift
+				;;
+			--file-system=*)
+				_arg_file_system+=("${_key##--file-system=}")
+				;;
+			--fs=*)
+				_arg_file_system+=("${_key##--fs=}")
+				;;
+			
+			--mount|--mount-point)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_mount_point+=("$2")
+				shift
+				;;
+			--mount-point=*)
+				_arg_mount_point+=("${_key##--mount-point=}")
+				;;
+			--mount=*)
+				_arg_mount_point+=("${_key##--mount=}")
+				;;
+			
+			--type)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_type+=("$2")
+				shift
+				;;
+			--type=*)
+				_arg_type+=("${_key##--type=}")
+				;;
+			
+			--options)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_options+=("$2")
+				shift
+				;;
+			--options=*)
+				_arg_options+=("${_key##--options=}")
+				;;
+			
+			--dump)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_dump+=("$2")
+				shift
+				;;
+			--dump=*)
+				_arg_dump+=("${_key##--dump=}")
+				;;
+			
+			--pass)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_pass+=("$2")
+				shift
+				;;
+			--pass=*)
+				_arg_pass+=("${_key##--pass=}")
+				;;
+			
+			--use-config)
+				_arg_use_config="on"
+				;;
+			--no-use-config|--no-config)
+				_arg_use_config="off"
+				;;
+			-h|--help)
+				print_help;
+				exit 0;
+				;;
+			-h*)
+				print_help;
+				exit 0;
+				;;
+			-v|--version)
+				print_version;
+				exit 0;
+				;;
+			-v*)
+				print_version;
+				exit 0;
+				;;
+			--verbose)
+					if [ $# -lt 2 ];then
+						_verbose_level="$((_verbose_level + 1))";
+					else
+						_verbose_level="$2";
+						shift;
+					fi
+					;;
+				--quiet)
+					if [ $# -lt 2 ];then
+						_verbose_level="$((_verbose_level - 1))";
+					else
+						_verbose_level="-$2";
+						shift;
+					fi
+					;;
+				
+			*)
+				_last_positional="$1"
+				_positionals+=("$_last_positional")
+				_positionals_count=$((_positionals_count + 1))
+				;;
+		esac
+		shift
+	done
+}
+
+
+handle_passed_args_count()
+{
+	local _required_args_string=""
+	if [ "${_positionals_count}" -gt 0 ] && [ "$_helpHasBeenPrinted" == "1" ];then
+		_PRINT_HELP=yes die "FATAL ERROR: There were spurious positional arguments --- we expect at most 0 (namely: $_required_args_string), but got ${_positionals_count} (the last one was: '${_last_positional}').\n\t${_positionals[*]}" 1
+	fi
+	if [ "${_positionals_count}" -lt 0 ] && [ "$_helpHasBeenPrinted" == "1" ];then
+		_PRINT_HELP=yes die "FATAL ERROR: Not enough positional arguments - we require at least 0 (namely: $_required_args_string), but got only ${_positionals_count}.
+	${_positionals[*]}" 1;
+	fi
+}
+
+
+assign_positional_args()
+{
+	local _positional_name _shift_for=$1;
+	_positional_names="";
+	shift "$_shift_for"
+	for _positional_name in ${_positional_names};do
+		test $# -gt 0 || break;
+		eval "if [ \"\$_one_of${_positional_name}\" != \"\" ];then [[ \"\${_one_of${_positional_name}[*]}\" =~ \"\${1}\" ]];fi" || die "${_positional_name} must be one of: $(eval "echo \"\${_one_of${_positional_name}[*]}\"")" 1;
+		eval "$_positional_name=\${1}" || die "Error during argument parsing, possibly an ParseArger bug." 1;
+		shift;
+	done
+}
+
+print_debug()
+{
+	print_help
+	# shellcheck disable=SC2145
+	echo "DEBUG: $0 $@";
+	
+	echo -e "\tconfig: ${_arg_config}";
+	echo -e "\tline: ${_arg_line[*]}";
+	echo -e "\tfile-system: ${_arg_file_system[*]}";
+	echo -e "\tmount-point: ${_arg_mount_point[*]}";
+	echo -e "\ttype: ${_arg_type[*]}";
+	echo -e "\toptions: ${_arg_options[*]}";
+	echo -e "\tdump: ${_arg_dump[*]}";
+	echo -e "\tpass: ${_arg_pass[*]}";
+	echo -e "\tuse-config: ${_arg_use_config}";
+
+}
+
+print_version()
+{
+	echo "";
+}
+
+on_interrupt() {
+	die Process aborted! 130;
+}
+
+parse_commandline "$@";
+handle_passed_args_count;
+assign_positional_args 1 "${_positionals[@]}";
+trap on_interrupt INT;
+
+
+
+# @parseArger-parsing-end
+# print_debug "$@"
+# @parseArger-end
+
+if [ "$_arg_use_config" != "off" ] && [ -f "$_arg_config" ]; then
+	# shellcheck source=../config.dist
+	source "$_arg_config";
+fi
+
+if [ "${#_arg_file_system[@]}" -gt 0 ]; then
+	if [ "${#_arg_file_system[@]}" != "${#_arg_mount_point[@]}" ] \
+		|| [ "${#_arg_file_system[@]}" != "${#_arg_type[@]}" ] \
+		|| [ "${#_arg_file_system[@]}" != "${#_arg_options[@]}" ] \
+		|| [ "${#_arg_file_system[@]}" != "${#_arg_dump[@]}" ] \
+		|| [ "${#_arg_file_system[@]}" != "${#_arg_pass[@]}" ]; then
+		log "Error: file-system, mount-point, type, options, dump and pass must have the same number of arguments" -3;
+		exit 1;
+	fi
+
+	for((i=0;i<${#_arg_file_system[@]};i++)); do
+		tnl="${_arg_file_system[$i]}\t${_arg_mount_point[$i]}\t${_arg_type[$i]}\t${_arg_options[$i]}\t${_arg_dump[$i]}\t${_arg_pass[$i]}";
+		log "building line :\n\t${tnl}" 2;
+		_arg_line+=("$tnl");
+	done
+fi
+
+for fst in "${_arg_line[@]}"; do
+	log "adding line to fstab:\n\t${fst}" 1;
+	echo "$fst" | sudo tee -a /etc/fstab;
+done

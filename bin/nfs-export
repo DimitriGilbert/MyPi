@@ -1,0 +1,303 @@
+#!/bin/bash
+# @parseArger-begin
+# @parseArger-help "add nfs export" --option "help" --short-option "h"
+# @parseArger-verbose --option "verbose" --level "0" --quiet-option "quiet"
+# @parseArger-declarations
+# @parseArger opt config "config file path" --default-value "__home__/.config/MyPi"
+# @parseArger opt export "/etc/exports entry" --short e --repeat
+# @parseArger opt directory "The directory that you want to share via NFS." --short d --repeat
+# @parseArger opt host "IP address or hostname of the client that you want to grant access " --short i --repeat --alias ip
+# @parseArger opt options "The options for the NFS share" --short 0 --repeat
+# @parseArger flag use-config "use a config file" --on --no-alias no-config
+# @parseArger-declarations-end
+
+# @parseArger-utils
+_helpHasBeenPrinted=1;
+_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)";
+# @parseArger-utils-end
+
+# @parseArger-parsing
+die()
+{
+	local _ret="${2:-1}"
+	test "${_PRINT_HELP:-no}" = yes && print_help >&2
+	log "$1" -3 >&2
+	exit "${_ret}"
+}
+
+
+begins_with_short_option()
+{
+	local first_option all_short_options=''
+	first_option="${1:0:1}"
+	test "$all_short_options" = "${all_short_options/$first_option/}" && return 1 || return 0
+}
+
+# POSITIONALS ARGUMENTS
+_positionals=();
+# OPTIONALS ARGUMENTS
+_arg_config="__home__/.config/MyPi"
+_arg_export=()
+_arg_directory=()
+_arg_host=()
+_arg_options=()
+# FLAGS
+_arg_use_config="on"
+_verbose_level="0";
+
+
+
+print_help()
+{
+	_triggerSCHelp=1;
+
+	if [[ "$_helpHasBeenPrinted" == "1" ]]; then
+		_helpHasBeenPrinted=0;
+		echo -e "add nfs export:"
+	echo -e "	--config <config>: config file path [default: ' __home__/.config/MyPi ']"
+	echo -e "	-e, --export <export>: /etc/exports entry, repeatable"
+	echo -e "	-d, --directory <directory>: The directory that you want to share via NFS., repeatable"
+	echo -e "	-i, --host|--ip <host>: IP address or hostname of the client that you want to grant access , repeatable"
+	echo -e "	-0, --options <options>: The options for the NFS share, repeatable"
+	echo -e "	--use-config|--no-use-config: use a config file, on by default (use --no-use-config to turn it off)
+		no-aliases: --no-config,"
+	echo -e "Usage :
+	$0 [--config <value>] [--export <value>] [--directory <value>] [--host <value>] [--options <value>] [--[no-]use-config]";
+	fi
+
+}
+
+log() {
+	local _arg_msg="${1}";
+	local _arg_level="${2:"0"}";
+	if [ "${_arg_level}" -le "${_verbose_level}" ]; then
+		case "$_arg_level" in
+			-3)
+				_arg_COLOR="\033[0;31m";
+				;;
+			-2)
+				_arg_COLOR="\033[0;33m";
+				;;
+			-1)
+				_arg_COLOR="\033[1;33m";
+				;;
+			1)
+				_arg_COLOR="\033[0;32m";
+				;;
+			2)
+				_arg_COLOR="\033[1;36m";
+				;;
+			3)
+				_arg_COLOR="\033[0;36m";
+				;;
+			*)
+				_arg_COLOR="\033[0m";
+				;;
+		esac
+		echo -e "${_arg_COLOR}${_arg_msg}\033[0m";
+	fi
+}
+
+parse_commandline()
+{
+	_positionals_count=0
+	while test $# -gt 0
+	do
+		_key="$1"
+		case "$_key" in
+			--config)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_config="$2"
+				shift
+				;;
+			--config=*)
+				_arg_config="${_key##--config=}"
+				;;
+			
+			-e|--export)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_export+=("$2")
+				shift
+				;;
+			--export=*)
+				_arg_export+=("${_key##--export=}")
+				;;
+			-e*)
+				_arg_export+=("${_key##-e}")
+				;;
+			
+			-d|--directory)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_directory+=("$2")
+				shift
+				;;
+			--directory=*)
+				_arg_directory+=("${_key##--directory=}")
+				;;
+			-d*)
+				_arg_directory+=("${_key##-d}")
+				;;
+			
+			-i|--ip|--host)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_host+=("$2")
+				shift
+				;;
+			--host=*)
+				_arg_host+=("${_key##--host=}")
+				;;
+			--ip=*)
+				_arg_host+=("${_key##--ip=}")
+				;;
+			-i*)
+				_arg_host+=("${_key##-i}")
+				;;
+			
+			-0|--options)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_options+=("$2")
+				shift
+				;;
+			--options=*)
+				_arg_options+=("${_key##--options=}")
+				;;
+			-0*)
+				_arg_options+=("${_key##-0}")
+				;;
+			
+			--use-config)
+				_arg_use_config="on"
+				;;
+			--no-use-config|--no-config)
+				_arg_use_config="off"
+				;;
+			-h|--help)
+				print_help;
+				exit 0;
+				;;
+			-h*)
+				print_help;
+				exit 0;
+				;;
+			-v|--version)
+				print_version;
+				exit 0;
+				;;
+			-v*)
+				print_version;
+				exit 0;
+				;;
+			--verbose)
+					if [ $# -lt 2 ];then
+						_verbose_level="$((_verbose_level + 1))";
+					else
+						_verbose_level="$2";
+						shift;
+					fi
+					;;
+				--quiet)
+					if [ $# -lt 2 ];then
+						_verbose_level="$((_verbose_level - 1))";
+					else
+						_verbose_level="-$2";
+						shift;
+					fi
+					;;
+				
+			*)
+				_last_positional="$1"
+				_positionals+=("$_last_positional")
+				_positionals_count=$((_positionals_count + 1))
+				;;
+		esac
+		shift
+	done
+}
+
+
+handle_passed_args_count()
+{
+	local _required_args_string=""
+	if [ "${_positionals_count}" -gt 0 ] && [ "$_helpHasBeenPrinted" == "1" ];then
+		_PRINT_HELP=yes die "FATAL ERROR: There were spurious positional arguments --- we expect at most 0 (namely: $_required_args_string), but got ${_positionals_count} (the last one was: '${_last_positional}').\n\t${_positionals[*]}" 1
+	fi
+	if [ "${_positionals_count}" -lt 0 ] && [ "$_helpHasBeenPrinted" == "1" ];then
+		_PRINT_HELP=yes die "FATAL ERROR: Not enough positional arguments - we require at least 0 (namely: $_required_args_string), but got only ${_positionals_count}.
+	${_positionals[*]}" 1;
+	fi
+}
+
+
+assign_positional_args()
+{
+	local _positional_name _shift_for=$1;
+	_positional_names="";
+	shift "$_shift_for"
+	for _positional_name in ${_positional_names};do
+		test $# -gt 0 || break;
+		eval "if [ \"\$_one_of${_positional_name}\" != \"\" ];then [[ \"\${_one_of${_positional_name}[*]}\" =~ \"\${1}\" ]];fi" || die "${_positional_name} must be one of: $(eval "echo \"\${_one_of${_positional_name}[*]}\"")" 1;
+		eval "$_positional_name=\${1}" || die "Error during argument parsing, possibly an ParseArger bug." 1;
+		shift;
+	done
+}
+
+print_debug()
+{
+	print_help
+	# shellcheck disable=SC2145
+	echo "DEBUG: $0 $@";
+	
+	echo -e "\tconfig: ${_arg_config}";
+	echo -e "\texport: ${_arg_export[*]}";
+	echo -e "\tdirectory: ${_arg_directory[*]}";
+	echo -e "\thost: ${_arg_host[*]}";
+	echo -e "\toptions: ${_arg_options[*]}";
+	echo -e "\tuse-config: ${_arg_use_config}";
+
+}
+
+print_version()
+{
+	echo "";
+}
+
+on_interrupt() {
+	die Process aborted! 130;
+}
+
+parse_commandline "$@";
+handle_passed_args_count;
+assign_positional_args 1 "${_positionals[@]}";
+trap on_interrupt INT;
+
+
+
+# @parseArger-parsing-end
+# print_debug "$@"
+# @parseArger-end
+
+if [ "${_arg_use_config}" == "on" ] && [ -f "${_arg_config}" ]; then
+	# shellcheck source=../config.dist
+	source "${_arg_config}";
+fi
+
+if [ "${#_arg_directory[@]}" -gt 0 ]; then
+	if [ "${#_arg_directory[@]}" != "${#_arg_host[@]}" ] \
+		|| [ "${#_arg_directory[@]}" != "${#_arg_options[@]}" ] ; then
+		log "Error: directory, host and options must have the same number of arguments" -3;
+		exit 1;
+	fi
+	
+	for((i=0;i<${#_arg_directory[@]};i++)); do
+		tnl="${_arg_directory[$i]}\t${_arg_host[$i]}(${_arg_options[$i]})";
+		log "building line :\n\t${tnl}" 2;
+		_arg_export+=("$tnl");
+	done
+fi
+
+if [ "${#_arg_export[@]}" -gt 0 ]; then
+	log "${#_arg_export[@]} nfs exports" 1;
+	for nfs in "${_arg_export[@]}"; do
+		echo "$nfs" | sudo tee -a /etc/exports;
+	done
+fi
