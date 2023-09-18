@@ -4,7 +4,7 @@
 # @parseArger-verbose --option "verbose" --level "0" --quiet-option "quiet"
 # @parseArger-leftovers leftovers
 # @parseArger-declarations
-# @parseArger pos target "subcommand" --optional --subcommand
+# @parseArger pos target "subcommand" --optional --subcommand-directory "bin/_install" --subcommand --one-of "apt" --one-of "docker" --one-of "docker-cmd" --one-of "git" --one-of "omz"
 # @parseArger opt config "config file" --default-value "__home__/.config/MyPi"
 # @parseArger opt apt "apt package to install" --short a --repeat
 # @parseArger opt git "git repo to clone" --short g --repeat
@@ -53,6 +53,7 @@ begins_with_short_option()
 # POSITIONALS ARGUMENTS
 _positionals=();
 _arg_target="";
+_one_of_arg_target=("apt" "docker" "docker-cmd" "git" "omz" );
 _arg_subcommand_arg="_arg_target";
 __subcommand=();
 # OPTIONALS ARGUMENTS
@@ -98,7 +99,7 @@ print_help()
 	if [[ "$_helpHasBeenPrinted" == "1" ]]; then
 		_helpHasBeenPrinted=0;
 		echo -e "install packages from various sources defined in a config file:"
-	echo -e "	target: subcommand, optional"
+	echo -e "	target: subcommand, optional [one of 'apt' 'docker' 'docker-cmd' 'git' 'omz']"
 	echo -e "	--config <config>: config file [default: ' __home__/.config/MyPi ']"
 	echo -e "	-a, --apt <apt>: apt package to install, repeatable"
 	echo -e "	-g, --git <git>: git repo to clone, repeatable"
@@ -418,7 +419,7 @@ assign_positional_args()
 		test $# -gt 0 || break;
 		if ! [[ "$_positional_name" =~ "_arg_leftovers" ]];then
 			eval "if [ \"\$_one_of${_positional_name}\" != \"\" ];then [[ \"\${_one_of${_positional_name}[*]}\" =~ \"\${1}\" ]];fi" || die "${_positional_name} must be one of: $(eval "echo \"\${_one_of${_positional_name}[*]}\"")" 1;
-			__subcommand+=("$_SCRIPT_DIR/${1}");
+			__subcommand+=("$_SCRIPT_DIR/_install/${1}");
 		fi
 		eval "$_positional_name=\${1}" || die "Error during argument parsing, possibly an ParseArger bug." 1;
 		shift;
@@ -488,291 +489,299 @@ if [ -f "$_arg_config" ]; then
 	source "$_arg_config";
 fi
 
-log "updating apt index" 0;
-sudo apt update -qq;
-sysToUpgrade=$(sudo apt list --upgradable 2>/dev/null | wc -l | tr -d '[:space:]');
-sysToUpgrade=$((sysToUpgrade));
-if [ "$sysToUpgrade" != "0" ]; then
-	log "$sysToUpgrade apt package to upgrade" 0;
-	sudo apt upgrade -y -qq --progress-bar;
+if [ "$_triggerSCHelp" == "" ]; then
+	log "updating apt index" 0;
+	sudo apt update -qq;
+	sysToUpgrade=$(sudo apt list --upgradable 2>/dev/null | wc -l | tr -d '[:space:]');
+	sysToUpgrade=$((sysToUpgrade));
+	if [ "$sysToUpgrade" != "0" ]; then
+		log "$sysToUpgrade apt package to upgrade" 0;
+		sudo apt upgrade -y -qq --progress-bar;
+	fi
 fi
 
 if [ "$_arg_target" != "" ]; then
-	echo "TODO";
+	# echo "TODO";
+	"${__subcommand[@]}";
 else
-	# mkdir
-	if [ "${#_arg_mkdir[@]}" -gt 0 ]; then
-		log "${#_arg_mkdir[@]} mkdir from cli" 1;
-		mkcmd=(mkdir -p);
-		if [ "${#_arg_mkdir_opt[@]}" -gt 0 ]; then
-			log "${#_arg_mkdir_opt[@]} mkdir options from cli" 1;
-			mkcmd+=("${_arg_mkdir_opt[@]}");
-		fi
-		for mdi in "${_arg_mkdir[@]}"; do
-			[ ! -d "$mdi" ] && "${mkcmd[@]}" "$mdi";
-		done
-	fi
-
-	# apt
-	if [ "$_arg_apt_install" == "on" ]; then
-		# if [ "${#_arg_apt_cmd[@]}" -gt 0 ]; then
-		# 	log "custom apt command:\n\t${_arg_apt_cmd[*]}" 1;
-		# 	aptCmd=("${_arg_apt_cmd[@]}" "git");
-		# else
-		# 	aptCmd=("sudo" "apt" "install" "-y");
-		# 	_arg_apt_cmd=("${aptCmd[@]}" "git");
-		# fi
-
-		# if [ "${#_arg_apt[@]}" -gt 0 ]; then
-		# 	log "${#_arg_apt[@]} apt packages from cli" 1;
-		# 	log "${_arg_apt[*]}" 2;
-		# 	aptCmd+=("${_arg_apt[@]}");
-		# fi
-		# if [ "${#MyPi_apt_pkg[@]}" -gt 0 ]; then
-		# 	log "${#MyPi_apt_pkg[@]} apt packages from config" 1;
-		# 	log "${MyPi_apt_pkg[*]}" 2;
-		# 	aptCmd+=("${MyPi_apt_pkg[@]}");
-		# fi
-
-		# # desktop
-		# if [ "$_arg_install_desktop" == "on" ]; then
-		# 	aptCmd+=(xserver-xorg lightdm);
-		# 	case "$_arg_desktop" in
-		# 		pixel|raspbian)
-		# 			aptCmd+=(raspberrypi-ui-mods);
-		# 			;;
-		# 		kde)
-		# 			aptCmd+=(kde-plasma-desktop);
-		# 			;;
-		# 		lxde)
-		# 			aptCmd+=(lxde-core lxappearance);
-		# 			;;
-		# 		xfce4)
-		# 			aptCmd+=(xfce4 xfce4-terminal);
-		# 			;;
-		# 		cinnamon)
-		# 			aptCmd+=(cinnamon-desktop-environment);
-		# 			;;
-		# 		mate)
-		# 			aptCmd+=(mate-desktop-environment);
-		# 			;;
-		# 		*)
-		# 			aptCmd+=(mate-desktop-environment);
-		# 			;;
-		# 	esac
-		# fi
-
-		# # oh my zsh dependency
-		# if [ "$_arg_install_omz" == "on" ]; then
-		# 	aptCmd+=(zsh);
-		# fi
-
-		# # nfs dependency
-		# if [ "$_arg_install_nfs" == "on" ] || [ "${#_arg_nfs_export[@]}" -gt 0 ]; then
-		# 	aptCmd+=(nfs-common nfs-kernel-server);
-		# fi
-
-		# if [ "${aptCmd[*]}" !=  "${_arg_apt_cmd[*]}" ]; then
-		# 	"${aptCmd[@]}";
-		# else 
-		# 	log "no apt packages to install" 2;
-		# fi
-		aptCmd=("$_SCRIPT_DIR/apt" --config "$_arg_config" --verbose "$_verbose_level");
-		if [ "${#_arg_apt[@]}" -gt 0 ]; then
-			aptCmd+=(-p "${_arg_apt[@]}");
-		fi
-
-		# desktop
-		if [ "$_arg_install_desktop" == "on" ]; then
-			aptCmd+=(xserver-xorg lightdm);
-			case "$_arg_desktop" in
-				pixel|raspbian)
-					aptCmd+=(-p raspberrypi-ui-mods);
-					;;
-				kde)
-					aptCmd+=(-p kde-plasma-desktop);
-					;;
-				lxde)
-					aptCmd+=(-p lxde-core -p lxappearance);
-					;;
-				xfce4)
-					aptCmd+=(-p xfce4 -p xfce4-terminal);
-					;;
-				cinnamon)
-					aptCmd+=(-p cinnamon-desktop-environment);
-					;;
-				mate)
-					aptCmd+=(-p mate-desktop-environment);
-					;;
-				*)
-					aptCmd+=(-p mate-desktop-environment);
-					;;
-			esac
-		fi
-
-		# oh my zsh dependency
-		if [ "$_arg_install_omz" == "on" ]; then
-			aptCmd+=(-p zsh);
-		fi
-
-		# nfs dependency
-		if [ "$_arg_install_nfs" == "on" ] || [ "${#_arg_nfs_export[@]}" -gt 0 ]; then
-			aptCmd+=(-p nfs-common -p nfs-kernel-server);
-		fi
-
-		"${aptCmd[@]}";
-	fi
-
-	# git
-	if [ "$_arg_git_install" == "on" ]; then
-		# gitCmd=(git clone);
-		# if [ "${#_arg_git[@]}" -gt 0 ]; then
-		# 	log "${#_arg_git[@]} git repos from cli" 2;
-		# 	for((i=0;i<${#_arg_git[@]};i++)); do
-		# 		log "cloning ${_arg_git[$i]}" 1;
-		# 		tgitCmd=("${gitCmd[@]}" "${_arg_git[$i]}");
-		# 		if [ "${#_arg_git_clone_dir[@]}" -ge "$i" ]; then
-		# 			log "\tin ${_arg_git_clone_dir[$i]}" 1;
-		# 			tgitCmd+=("${_arg_git_clone_dir[$i]}");
-		# 		fi
-		# 		"${tgitCmd[@]}";
-		# 	done
-		# fi
-		# if [ "${#MyPi_git_repo[@]}" -gt 0 ]; then
-		# 	log "${#MyPi_git_repo[@]} git repos from config" 1;
-		# 	for((i=0;i<${#MyPi_git_repo[@]};i++)); do
-		# 		log "cloning ${MyPi_git_repo[$i]}" 1;
-		# 		tgitCmd=("${gitCmd[@]}" "${MyPi_git_repo[$i]}");
-		# 		if [ "${#MyPi_git_clone_dir[@]}" -ge "$i" ]; then
-		# 			log "\tin ${MyPi_git_clone_dir[$i]}" 1;
-		# 			tgitCmd+=("${MyPi_git_clone_dir[$i]}");
-		# 		fi
-		# 		"${tgitCmd[@]}";
-		# 	done
-		# fi
-		gitCmd=("$_SCRIPT_DIR/git" --config "$_arg_config" --verbose "$_verbose_level");
-		if [ "${#_arg_git[@]}" -gt 0 ]; then
-			gitCmd+=(-r "${_arg_git[@]}");
-		fi
-		"${gitCmd[@]}";
-	fi
-
-	# docker
-	if [ "$_arg_install_docker" == "on" ]; then
-		# log "installing docker" 1;
-		# curl -sSL https://get.docker.com | sh;
-		# sudo usermod -aG docker "$USER";
-		# sudo apt install docker-compose -y;
-		"$_SCRIPT_DIR/_install/docker" --config "$_arg_config" --verbose "$_verbose_level";
-
-		if [ "$_arg_docker_install" == "on" ];then
-			# if [ "${#_arg_docker[@]}" -gt 0 ]; then
-			# 	log "${#_arg_docker[@]} docker commands from cli" 1;
-			# 	for dck in "${_arg_docker[@]}"; do
-			# 		log "executing:\n\tdocker $dck" 1;
-			# 		eval "docker $dck;";
-			# 	done
-			# fi
-			# if [ "${#MyPi_docker_cmd[@]}" -gt 0 ]; then
-			# 	log "${#MyPi_docker_cmd[@]} docker commands from config" 1;
-			# 	for dck in "${MyPi_docker_cmd[@]}"; do
-			# 		log "executing:\n\tdocker $dck" 1;
-			# 		eval "docker $dck;";
-			# 	done
-			# fi
-			dockerCmd=("$_SCRIPT_DIR/docker" --config "$_arg_config" --verbose "$_verbose_level");
-			if [ "${#_arg_docker[@]}" -gt 0 ]; then
-				dockerCmd+=(-c "${_arg_docker[@]}");
+	if [ "$_triggerSCHelp" == "1" ]; then
+		print_help;
+		exit 0;
+	else
+		# mkdir
+		if [ "${#_arg_mkdir[@]}" -gt 0 ]; then
+			log "${#_arg_mkdir[@]} mkdir from cli" 1;
+			mkcmd=(mkdir -p);
+			if [ "${#_arg_mkdir_opt[@]}" -gt 0 ]; then
+				log "${#_arg_mkdir_opt[@]} mkdir options from cli" 1;
+				mkcmd+=("${_arg_mkdir_opt[@]}");
 			fi
-			"${dockerCmd[@]}";
-		fi
-	fi
-
-	# nfs export
-	if [ "$_arg_install_nfs" == "on" ]; then
-		# if [ "${#_arg_nfs_export[@]}" -gt 0 ]; then
-		# 	log "${#_arg_nfs_export[@]} nfs exports from cli" 1;
-		# 	for nfs in "${_arg_nfs_export[@]}"; do
-		# 		echo "$nfs" | sudo tee -a /etc/exports;
-		# 	done
-		# fi
-		# if [ "${#MyPi_nfs_export[@]}" -gt 0 ]; then
-		# 	log "${#MyPi_nfs_export[@]} nfs exports from config" 1;
-		# 	for nfs in "${MyPi_nfs_export[@]}"; do
-		# 		echo "$nfs" | sudo tee -a /etc/exports;
-		# 	done
-		# fi
-		nfsCmd=("$_SCRIPT_DIR/nfs-export" --config "$_arg_config" --verbose "$_verbose_level");
-		if [ "${#_arg_nfs_export[@]}" -gt 0 ]; then
-			log "${#_arg_nfs_export[@]} nfs exports from cli" 1;
-			for nfs in "${_arg_nfs_export[@]}"; do
-				nfsCmd+=(-e "$nfs");
+			for mdi in "${_arg_mkdir[@]}"; do
+				[ ! -d "$mdi" ] && "${mkcmd[@]}" "$mdi";
 			done
 		fi
-		if [ "${#MyPi_nfs_export[@]}" -gt 0 ]; then
-			log "${#MyPi_nfs_export[@]} nfs exports from config" 1;
-			for nfs in "${MyPi_nfs_export[@]}"; do
-				nfsCmd+=(-e "$nfs");
+
+		# apt
+		if [ "$_arg_apt_install" == "on" ]; then
+			# if [ "${#_arg_apt_cmd[@]}" -gt 0 ]; then
+			# 	log "custom apt command:\n\t${_arg_apt_cmd[*]}" 1;
+			# 	aptCmd=("${_arg_apt_cmd[@]}" "git");
+			# else
+			# 	aptCmd=("sudo" "apt" "install" "-y");
+			# 	_arg_apt_cmd=("${aptCmd[@]}" "git");
+			# fi
+
+			# if [ "${#_arg_apt[@]}" -gt 0 ]; then
+			# 	log "${#_arg_apt[@]} apt packages from cli" 1;
+			# 	log "${_arg_apt[*]}" 2;
+			# 	aptCmd+=("${_arg_apt[@]}");
+			# fi
+			# if [ "${#MyPi_apt_pkg[@]}" -gt 0 ]; then
+			# 	log "${#MyPi_apt_pkg[@]} apt packages from config" 1;
+			# 	log "${MyPi_apt_pkg[*]}" 2;
+			# 	aptCmd+=("${MyPi_apt_pkg[@]}");
+			# fi
+
+			# # desktop
+			# if [ "$_arg_install_desktop" == "on" ]; then
+			# 	aptCmd+=(xserver-xorg lightdm);
+			# 	case "$_arg_desktop" in
+			# 		pixel|raspbian)
+			# 			aptCmd+=(raspberrypi-ui-mods);
+			# 			;;
+			# 		kde)
+			# 			aptCmd+=(kde-plasma-desktop);
+			# 			;;
+			# 		lxde)
+			# 			aptCmd+=(lxde-core lxappearance);
+			# 			;;
+			# 		xfce4)
+			# 			aptCmd+=(xfce4 xfce4-terminal);
+			# 			;;
+			# 		cinnamon)
+			# 			aptCmd+=(cinnamon-desktop-environment);
+			# 			;;
+			# 		mate)
+			# 			aptCmd+=(mate-desktop-environment);
+			# 			;;
+			# 		*)
+			# 			aptCmd+=(mate-desktop-environment);
+			# 			;;
+			# 	esac
+			# fi
+
+			# # oh my zsh dependency
+			# if [ "$_arg_install_omz" == "on" ]; then
+			# 	aptCmd+=(zsh);
+			# fi
+
+			# # nfs dependency
+			# if [ "$_arg_install_nfs" == "on" ] || [ "${#_arg_nfs_export[@]}" -gt 0 ]; then
+			# 	aptCmd+=(nfs-common nfs-kernel-server);
+			# fi
+
+			# if [ "${aptCmd[*]}" !=  "${_arg_apt_cmd[*]}" ]; then
+			# 	"${aptCmd[@]}";
+			# else 
+			# 	log "no apt packages to install" 2;
+			# fi
+			aptCmd=("$_SCRIPT_DIR/apt" --config "$_arg_config" --verbose "$_verbose_level");
+			if [ "${#_arg_apt[@]}" -gt 0 ]; then
+				aptCmd+=(-p "${_arg_apt[@]}");
+			fi
+
+			# desktop
+			if [ "$_arg_install_desktop" == "on" ]; then
+				aptCmd+=(xserver-xorg lightdm);
+				case "$_arg_desktop" in
+					pixel|raspbian)
+						aptCmd+=(-p raspberrypi-ui-mods);
+						;;
+					kde)
+						aptCmd+=(-p kde-plasma-desktop);
+						;;
+					lxde)
+						aptCmd+=(-p lxde-core -p lxappearance);
+						;;
+					xfce4)
+						aptCmd+=(-p xfce4 -p xfce4-terminal);
+						;;
+					cinnamon)
+						aptCmd+=(-p cinnamon-desktop-environment);
+						;;
+					mate)
+						aptCmd+=(-p mate-desktop-environment);
+						;;
+					*)
+						aptCmd+=(-p mate-desktop-environment);
+						;;
+				esac
+			fi
+
+			# oh my zsh dependency
+			if [ "$_arg_install_omz" == "on" ]; then
+				aptCmd+=(-p zsh);
+			fi
+
+			# nfs dependency
+			if [ "$_arg_install_nfs" == "on" ] || [ "${#_arg_nfs_export[@]}" -gt 0 ]; then
+				aptCmd+=(-p nfs-common -p nfs-kernel-server);
+			fi
+
+			"${aptCmd[@]}";
+		fi
+
+		# git
+		if [ "$_arg_git_install" == "on" ]; then
+			# gitCmd=(git clone);
+			# if [ "${#_arg_git[@]}" -gt 0 ]; then
+			# 	log "${#_arg_git[@]} git repos from cli" 2;
+			# 	for((i=0;i<${#_arg_git[@]};i++)); do
+			# 		log "cloning ${_arg_git[$i]}" 1;
+			# 		tgitCmd=("${gitCmd[@]}" "${_arg_git[$i]}");
+			# 		if [ "${#_arg_git_clone_dir[@]}" -ge "$i" ]; then
+			# 			log "\tin ${_arg_git_clone_dir[$i]}" 1;
+			# 			tgitCmd+=("${_arg_git_clone_dir[$i]}");
+			# 		fi
+			# 		"${tgitCmd[@]}";
+			# 	done
+			# fi
+			# if [ "${#MyPi_git_repo[@]}" -gt 0 ]; then
+			# 	log "${#MyPi_git_repo[@]} git repos from config" 1;
+			# 	for((i=0;i<${#MyPi_git_repo[@]};i++)); do
+			# 		log "cloning ${MyPi_git_repo[$i]}" 1;
+			# 		tgitCmd=("${gitCmd[@]}" "${MyPi_git_repo[$i]}");
+			# 		if [ "${#MyPi_git_clone_dir[@]}" -ge "$i" ]; then
+			# 			log "\tin ${MyPi_git_clone_dir[$i]}" 1;
+			# 			tgitCmd+=("${MyPi_git_clone_dir[$i]}");
+			# 		fi
+			# 		"${tgitCmd[@]}";
+			# 	done
+			# fi
+			gitCmd=("$_SCRIPT_DIR/git" --config "$_arg_config" --verbose "$_verbose_level");
+			if [ "${#_arg_git[@]}" -gt 0 ]; then
+				gitCmd+=(-r "${_arg_git[@]}");
+			fi
+			"${gitCmd[@]}";
+		fi
+
+		# docker
+		if [ "$_arg_install_docker" == "on" ]; then
+			# log "installing docker" 1;
+			# curl -sSL https://get.docker.com | sh;
+			# sudo usermod -aG docker "$USER";
+			# sudo apt install docker-compose -y;
+			"$_SCRIPT_DIR/_install/docker" --config "$_arg_config" --verbose "$_verbose_level";
+
+			if [ "$_arg_docker_install" == "on" ];then
+				# if [ "${#_arg_docker[@]}" -gt 0 ]; then
+				# 	log "${#_arg_docker[@]} docker commands from cli" 1;
+				# 	for dck in "${_arg_docker[@]}"; do
+				# 		log "executing:\n\tdocker $dck" 1;
+				# 		eval "docker $dck;";
+				# 	done
+				# fi
+				# if [ "${#MyPi_docker_cmd[@]}" -gt 0 ]; then
+				# 	log "${#MyPi_docker_cmd[@]} docker commands from config" 1;
+				# 	for dck in "${MyPi_docker_cmd[@]}"; do
+				# 		log "executing:\n\tdocker $dck" 1;
+				# 		eval "docker $dck;";
+				# 	done
+				# fi
+				dockerCmd=("$_SCRIPT_DIR/docker" --config "$_arg_config" --verbose "$_verbose_level");
+				if [ "${#_arg_docker[@]}" -gt 0 ]; then
+					dockerCmd+=(-c "${_arg_docker[@]}");
+				fi
+				"${dockerCmd[@]}";
+			fi
+		fi
+
+		# nfs export
+		if [ "$_arg_install_nfs" == "on" ]; then
+			# if [ "${#_arg_nfs_export[@]}" -gt 0 ]; then
+			# 	log "${#_arg_nfs_export[@]} nfs exports from cli" 1;
+			# 	for nfs in "${_arg_nfs_export[@]}"; do
+			# 		echo "$nfs" | sudo tee -a /etc/exports;
+			# 	done
+			# fi
+			# if [ "${#MyPi_nfs_export[@]}" -gt 0 ]; then
+			# 	log "${#MyPi_nfs_export[@]} nfs exports from config" 1;
+			# 	for nfs in "${MyPi_nfs_export[@]}"; do
+			# 		echo "$nfs" | sudo tee -a /etc/exports;
+			# 	done
+			# fi
+			nfsCmd=("$_SCRIPT_DIR/nfs-export" --config "$_arg_config" --verbose "$_verbose_level");
+			if [ "${#_arg_nfs_export[@]}" -gt 0 ]; then
+				log "${#_arg_nfs_export[@]} nfs exports from cli" 1;
+				for nfs in "${_arg_nfs_export[@]}"; do
+					nfsCmd+=(-e "$nfs");
+				done
+			fi
+			if [ "${#MyPi_nfs_export[@]}" -gt 0 ]; then
+				log "${#MyPi_nfs_export[@]} nfs exports from config" 1;
+				for nfs in "${MyPi_nfs_export[@]}"; do
+					nfsCmd+=(-e "$nfs");
+				done
+			fi
+		fi
+
+		# fstab
+		fstentry=()
+		if [ "${#_arg_fstab[@]}" -gt 0 ]; then
+			log "${#_arg_fstab[@]} fstab lines from cli" 1;
+			for fst in "${_arg_fstab[@]}"; do
+				# echo "$fst" | sudo tee -a /etc/fstab;
+				fstentry+=(-l "$fst");
 			done
 		fi
-	fi
-
-	# fstab
-	fstentry=()
-	if [ "${#_arg_fstab[@]}" -gt 0 ]; then
-		log "${#_arg_fstab[@]} fstab lines from cli" 1;
-		for fst in "${_arg_fstab[@]}"; do
-			# echo "$fst" | sudo tee -a /etc/fstab;
-			fstentry+=(-l "$fst");
-		done
-	fi
-	if [ "${#MyPi_fstab[@]}" -gt 0 ]; then
-		log "${#MyPi_fstab[@]} fstab lines from config" 1;
-		for fst in "${MyPi_fstab[@]}"; do
-			# echo "$fst" | sudo tee -a /etc/fstab;
-			fstentry+=(-l "$fst");
-		done
-	fi
-	if [ "${#fstentry[@]}" -gt 0 ]; then
-		fstabCmd=("$_SCRIPT_DIR/add-fstab" --config "$_arg_config" --verbose "$_verbose_level" "${fstentry[@]}");
-		"${fstabCmd[@]}";
-	fi
-
-	# omz 
-	if [ "$_arg_install_omz" == "on" ]; then
-		# log "installing oh my zsh" 1;
-		# RUNZSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)";
-		# if [ "${#_arg_omz_plugin[@]}" -gt 0 ]; then
-		# 	log "${#_arg_omz_plugin[@]} omz plugins from cli" 1;
-		# 	for omzp in "${_arg_omz_plugin[@]}"; do
-		# 		log "enabling $omzp" 1;
-		# 		sed -i "s/plugins=(git)/plugins=(git $omzp)/g" ~/.zshrc;
-		# 	done
-		# fi
-		omzCmd=("$_SCRIPT_DIR/_install/omz" --config "$_arg_config" --verbose "$_verbose_level");
-		if [ "${#_arg_omz_plugin[@]}" -gt 0 ]; then
-			omzCmd+=(-p "${_arg_omz_plugin[@]}");
+		if [ "${#MyPi_fstab[@]}" -gt 0 ]; then
+			log "${#MyPi_fstab[@]} fstab lines from config" 1;
+			for fst in "${MyPi_fstab[@]}"; do
+				# echo "$fst" | sudo tee -a /etc/fstab;
+				fstentry+=(-l "$fst");
+			done
 		fi
-		"${omzCmd[@]}";
-	fi
+		if [ "${#fstentry[@]}" -gt 0 ]; then
+			fstabCmd=("$_SCRIPT_DIR/add-fstab" --config "$_arg_config" --verbose "$_verbose_level" "${fstentry[@]}");
+			"${fstabCmd[@]}";
+		fi
 
-	# post install
-	if [ "${#_arg_post_install[@]}" -gt 0 ]; then
-		log "${#_arg_post_install[@]} post install scripts from cli" 1;
-		for pi in "${_arg_post_install[@]}"; do
-			if [ "$(command -v "$pi")" ]; then
-				log "executing $pi" 1;
-				"$pi";
-			fi			
-		done
-	fi
-	if [ "${#MyPi_post_install[@]}" -gt 0 ]; then
-		log "${#MyPi_post_install[@]} post install scripts from config" 1;
-		for pi in "${MyPi_post_install[@]}"; do
-			if [ "$(command -v "$pi")" ]; then
-				log "executing $pi" 1;
-				"$pi";
-			fi			
-		done
+		# omz 
+		if [ "$_arg_install_omz" == "on" ]; then
+			# log "installing oh my zsh" 1;
+			# RUNZSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)";
+			# if [ "${#_arg_omz_plugin[@]}" -gt 0 ]; then
+			# 	log "${#_arg_omz_plugin[@]} omz plugins from cli" 1;
+			# 	for omzp in "${_arg_omz_plugin[@]}"; do
+			# 		log "enabling $omzp" 1;
+			# 		sed -i "s/plugins=(git)/plugins=(git $omzp)/g" ~/.zshrc;
+			# 	done
+			# fi
+			omzCmd=("$_SCRIPT_DIR/_install/omz" --config "$_arg_config" --verbose "$_verbose_level");
+			if [ "${#_arg_omz_plugin[@]}" -gt 0 ]; then
+				omzCmd+=(-p "${_arg_omz_plugin[@]}");
+			fi
+			"${omzCmd[@]}";
+		fi
+
+		# post install
+		if [ "${#_arg_post_install[@]}" -gt 0 ]; then
+			log "${#_arg_post_install[@]} post install scripts from cli" 1;
+			for pi in "${_arg_post_install[@]}"; do
+				if [ "$(command -v "$pi")" ]; then
+					log "executing $pi" 1;
+					"$pi";
+				fi			
+			done
+		fi
+		if [ "${#MyPi_post_install[@]}" -gt 0 ]; then
+			log "${#MyPi_post_install[@]} post install scripts from config" 1;
+			for pi in "${MyPi_post_install[@]}"; do
+				if [ "$(command -v "$pi")" ]; then
+					log "executing $pi" 1;
+					"$pi";
+				fi			
+			done
+		fi
 	fi
 fi

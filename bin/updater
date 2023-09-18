@@ -319,6 +319,7 @@ fi
 
 # dist-upgrade
 if [ "$_arg_dist_upgrade" == "on" ]; then
+	log "dist upgrade" 1;
 	sudo apt dist-upgrade -y -qq --progress-bar;
 fi
 

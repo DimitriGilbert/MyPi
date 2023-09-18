@@ -7,7 +7,7 @@
 # @parseArger opt export "/etc/exports entry" --short e --repeat
 # @parseArger opt directory "The directory that you want to share via NFS." --short d --repeat
 # @parseArger opt host "IP address or hostname of the client that you want to grant access " --short i --repeat --alias ip
-# @parseArger opt options "The options for the NFS share" --short 0 --repeat
+# @parseArger opt options "The options for the NFS share" --short o --repeat
 # @parseArger flag use-config "use a config file" --on --no-alias no-config
 # @parseArger-declarations-end
 
@@ -58,7 +58,7 @@ print_help()
 	echo -e "	-e, --export <export>: /etc/exports entry, repeatable"
 	echo -e "	-d, --directory <directory>: The directory that you want to share via NFS., repeatable"
 	echo -e "	-i, --host|--ip <host>: IP address or hostname of the client that you want to grant access , repeatable"
-	echo -e "	-0, --options <options>: The options for the NFS share, repeatable"
+	echo -e "	-o, --options <options>: The options for the NFS share, repeatable"
 	echo -e "	--use-config|--no-use-config: use a config file, on by default (use --no-use-config to turn it off)
 		no-aliases: --no-config,"
 	echo -e "Usage :
@@ -153,7 +153,7 @@ parse_commandline()
 				_arg_host+=("${_key##-i}")
 				;;
 			
-			-0|--options)
+			-o|--options)
 				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
 				_arg_options+=("$2")
 				shift
@@ -161,8 +161,8 @@ parse_commandline()
 			--options=*)
 				_arg_options+=("${_key##--options=}")
 				;;
-			-0*)
-				_arg_options+=("${_key##-0}")
+			-o*)
+				_arg_options+=("${_key##-o}")
 				;;
 			
 			--use-config)
