@@ -126,6 +126,48 @@ Usage :
 	MyPi install omz [--config <value>] [--plugin <value>] [--[no-]use-config]
 ```
 
+### MyPi mesure
+
+```
+I send an SOS to the world:
+	target: mesure what [one of 'cpu' 'gpu' 'ram']
+Usage :
+	MyPi mesure <target>
+```
+
+### MyPi mesure cpu
+
+```
+MyPi mesure sub command help
+	
+I send an SOS to the world:
+	target: cpu mesure [one of 'temperature' 'temp' 'voltage' 'volt' 'frequency' 'freq' 'clock' 'ram' 'mem' 'memory']
+Usage :
+	MyPi mesure cpu <target>
+```
+
+### MyPi mesure gpu
+
+```
+MyPi mesure sub command help
+	
+I send an SOS to the world:
+	target: cpu mesure [one of 'ram' 'voltage' 'volt' 'frequency' 'freq' 'clock']
+Usage :
+	MyPi mesure gpu <target>
+```
+
+### MyPi mesure ram
+
+```
+MyPi mesure sub command help
+	
+I send an SOS to the world:
+	target: ram mesure, optional [one of 'cpu' 'arm' 'gpu']
+Usage :
+	MyPi mesure ram [target]
+```
+
 ## MyPi nfs-export
 
 ```

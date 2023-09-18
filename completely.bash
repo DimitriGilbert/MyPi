@@ -44,8 +44,12 @@ _MyPi_completions() {
       while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_MyPi_completions_filter "--config --shutdown --use-config --no-use-config --no-config --apt --no-apt --git --no-git --docker --no-docker --dist-upgrade --no-dist-upgrade --apt-clean --no-apt-clean --reboot --no-reboot")" -- "$cur" )
       ;;
 
+    'mesure'*)
+      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_MyPi_completions_filter "cpu gpu ram")" -- "$cur" )
+      ;;
+
     *)
-      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_MyPi_completions_filter "add-fstab install nfs-export updater")" -- "$cur" )
+      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_MyPi_completions_filter "add-fstab install mesure nfs-export updater")" -- "$cur" )
       ;;
 
   esac

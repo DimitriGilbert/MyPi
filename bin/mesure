@@ -1,10 +1,10 @@
 #!/bin/bash
 # @parseArger-begin
-# @parseArger-help "MyPi, My Tools" --option "help" --short-option "h"
+# @parseArger-help "I send an SOS to the world" --option "help" --short-option "h"
 # @parseArger-verbose --option "verbose" --level "0" --quiet-option "quiet"
 # @parseArger-leftovers leftovers
 # @parseArger-declarations
-# @parseArger pos target "what should we do ?" --subcommand-directory "bin" --subcommand-run --subcommand --one-of "add-fstab" --one-of "install" --one-of "mesure" --one-of "nfs-export" --one-of "updater"
+# @parseArger pos target "mesure what" --subcommand-directory "bin/_mesure" --subcommand-run --subcommand --one-of "cpu" --one-of "gpu" --one-of "ram"
 # @parseArger-declarations-end
 
 # @parseArger-utils
@@ -32,7 +32,7 @@ begins_with_short_option()
 # POSITIONALS ARGUMENTS
 _positionals=();
 _arg_target="";
-_one_of_arg_target=("add-fstab" "install" "mesure" "nfs-export" "updater" );
+_one_of_arg_target=("cpu" "gpu" "ram" );
 _arg_subcommand_arg="_arg_target";
 __subcommand=();
 # OPTIONALS ARGUMENTS
@@ -56,8 +56,8 @@ print_help()
 
 	if [[ "$_helpHasBeenPrinted" == "1" ]]; then
 		_helpHasBeenPrinted=0;
-		echo -e "MyPi, My Tools:"
-	echo -e "	target: what should we do ? [one of 'add-fstab' 'install' 'mesure' 'nfs-export' 'updater']"
+		echo -e "I send an SOS to the world:"
+	echo -e "	target: mesure what [one of 'cpu' 'gpu' 'ram']"
 	echo -e "Usage :
 	$0 <target>";
 	fi
@@ -73,28 +73,28 @@ log() {
 	if [ "${_arg_level}" -le "${_verbose_level}" ]; then
 		case "$_arg_level" in
 			-3)
-				_arg_COLOR="\033[0;31m";
+				_arg_COLOR="[0;31m";
 				;;
 			-2)
-				_arg_COLOR="\033[0;33m";
+				_arg_COLOR="[0;33m";
 				;;
 			-1)
-				_arg_COLOR="\033[1;33m";
+				_arg_COLOR="[1;33m";
 				;;
 			1)
-				_arg_COLOR="\033[0;32m";
+				_arg_COLOR="[0;32m";
 				;;
 			2)
-				_arg_COLOR="\033[1;36m";
+				_arg_COLOR="[1;36m";
 				;;
 			3)
-				_arg_COLOR="\033[0;36m";
+				_arg_COLOR="[0;36m";
 				;;
 			*)
-				_arg_COLOR="\033[0m";
+				_arg_COLOR="[0m";
 				;;
 		esac
-		echo -e "${_arg_COLOR}${_arg_msg}\033[0m";
+		echo -e "${_arg_COLOR}${_arg_msg}[0m";
 	fi
 }
 
@@ -171,7 +171,7 @@ assign_positional_args()
 		test $# -gt 0 || break;
 		if ! [[ "$_positional_name" =~ "_arg_leftovers" ]];then
 			eval "if [ \"\$_one_of${_positional_name}\" != \"\" ];then [[ \"\${_one_of${_positional_name}[*]}\" =~ \"\${1}\" ]];fi" || die "${_positional_name} must be one of: $(eval "echo \"\${_one_of${_positional_name}[*]}\"")" 1;
-			__subcommand+=("$_SCRIPT_DIR/bin/${1}");
+			__subcommand+=("$_SCRIPT_DIR/_mesure/${1}");
 		fi
 		eval "$_positional_name=\${1}" || die "Error during argument parsing, possibly an ParseArger bug." 1;
 		shift;
@@ -184,8 +184,8 @@ print_debug()
 	# shellcheck disable=SC2145
 	echo "DEBUG: $0 $@";
 	
-	echo -e "\ttarget: ${_arg_target}";
-	echo -e "\tleftovers: ${_arg_leftovers[*]}";
+	echo -e "	target: ${_arg_target}";
+	echo -e "	leftovers: ${_arg_leftovers[*]}";
 
 }
 

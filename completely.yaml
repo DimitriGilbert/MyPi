@@ -1,6 +1,7 @@
 MyPi:
 - add-fstab
 - install
+- mesure
 - nfs-export
 - updater
 MyPi add-fstab:
@@ -62,6 +63,10 @@ MyPi install:
 - --no-install-desktop
 - --no-desktop
 - --no-de
+MyPi mesure:
+- cpu
+- gpu
+- ram
 MyPi nfs-export:
 - --config
 - --export

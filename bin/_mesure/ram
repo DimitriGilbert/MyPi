@@ -1,10 +1,9 @@
 #!/bin/bash
 # @parseArger-begin
-# @parseArger-help "MyPi, My Tools" --option "help" --short-option "h"
+# @parseArger-help "I send an SOS to the world" --option "help" --short-option "h"
 # @parseArger-verbose --option "verbose" --level "0" --quiet-option "quiet"
-# @parseArger-leftovers leftovers
 # @parseArger-declarations
-# @parseArger pos target "what should we do ?" --subcommand-directory "bin" --subcommand-run --subcommand --one-of "add-fstab" --one-of "install" --one-of "mesure" --one-of "nfs-export" --one-of "updater"
+# @parseArger pos target "ram mesure" --optional --one-of "cpu" --one-of "arm" --one-of "gpu"
 # @parseArger-declarations-end
 
 # @parseArger-utils
@@ -32,13 +31,9 @@ begins_with_short_option()
 # POSITIONALS ARGUMENTS
 _positionals=();
 _arg_target="";
-_one_of_arg_target=("add-fstab" "install" "mesure" "nfs-export" "updater" );
-_arg_subcommand_arg="_arg_target";
-__subcommand=();
+_one_of_arg_target=("cpu" "arm" "gpu" );
 # OPTIONALS ARGUMENTS
 # FLAGS
-# LEFTOVERS
-_arg_leftovers=()
 _verbose_level="0";
 
 
@@ -47,23 +42,13 @@ print_help()
 {
 	_triggerSCHelp=1;
 
-	if [ "${#_positionals[@]}" -ge 1 ]; then
-		echo "$0 sub command help
-	"
-		_triggerSCHelp=0;
-	else
-	
-
 	if [[ "$_helpHasBeenPrinted" == "1" ]]; then
 		_helpHasBeenPrinted=0;
-		echo -e "MyPi, My Tools:"
-	echo -e "	target: what should we do ? [one of 'add-fstab' 'install' 'mesure' 'nfs-export' 'updater']"
+		echo -e "I send an SOS to the world:"
+	echo -e "	target: ram mesure, optional [one of 'cpu' 'arm' 'gpu']"
 	echo -e "Usage :
-	$0 <target>";
+	$0 [target]";
 	fi
-
-	fi
-	
 
 }
 
@@ -107,9 +92,11 @@ parse_commandline()
 		case "$_key" in
 			-h|--help)
 				print_help;
+				exit 0;
 				;;
 			-h*)
 				print_help;
+				exit 0;
 				;;
 			-v|--version)
 				print_version;
@@ -149,9 +136,12 @@ parse_commandline()
 
 handle_passed_args_count()
 {
-	local _required_args_string="target"
-	if [ "${_positionals_count}" -lt 1 ] && [ "$_helpHasBeenPrinted" == "1" ];then
-		_PRINT_HELP=yes die "FATAL ERROR: Not enough positional arguments - we require at least 1 (namely: $_required_args_string), but got only ${_positionals_count}.
+	local _required_args_string=""
+	if [ "${_positionals_count}" -gt 1 ] && [ "$_helpHasBeenPrinted" == "1" ];then
+		_PRINT_HELP=yes die "FATAL ERROR: There were spurious positional arguments --- we expect at most 1 (namely: $_required_args_string), but got ${_positionals_count} (the last one was: '${_last_positional}').\n\t${_positionals[*]}" 1
+	fi
+	if [ "${_positionals_count}" -lt 0 ] && [ "$_helpHasBeenPrinted" == "1" ];then
+		_PRINT_HELP=yes die "FATAL ERROR: Not enough positional arguments - we require at least 0 (namely: $_required_args_string), but got only ${_positionals_count}.
 	${_positionals[*]}" 1;
 	fi
 }
@@ -161,18 +151,10 @@ assign_positional_args()
 {
 	local _positional_name _shift_for=$1;
 	_positional_names="_arg_target ";
-	_leftovers_count=$((${#_positionals[@]} - 1))
-	for ((ii = 0; ii < _leftovers_count; ii++));do
-		_positional_names="$_positional_names _arg_leftovers[$((ii + 0))]";
-	done
-
 	shift "$_shift_for"
 	for _positional_name in ${_positional_names};do
 		test $# -gt 0 || break;
-		if ! [[ "$_positional_name" =~ "_arg_leftovers" ]];then
-			eval "if [ \"\$_one_of${_positional_name}\" != \"\" ];then [[ \"\${_one_of${_positional_name}[*]}\" =~ \"\${1}\" ]];fi" || die "${_positional_name} must be one of: $(eval "echo \"\${_one_of${_positional_name}[*]}\"")" 1;
-			__subcommand+=("$_SCRIPT_DIR/bin/${1}");
-		fi
+		eval "if [ \"\$_one_of${_positional_name}\" != \"\" ];then [[ \"\${_one_of${_positional_name}[*]}\" =~ \"\${1}\" ]];fi" || die "${_positional_name} must be one of: $(eval "echo \"\${_one_of${_positional_name}[*]}\"")" 1;
 		eval "$_positional_name=\${1}" || die "Error during argument parsing, possibly an ParseArger bug." 1;
 		shift;
 	done
@@ -185,7 +167,6 @@ print_debug()
 	echo "DEBUG: $0 $@";
 	
 	echo -e "\ttarget: ${_arg_target}";
-	echo -e "\tleftovers: ${_arg_leftovers[*]}";
 
 }
 
@@ -204,14 +185,19 @@ assign_positional_args 1 "${_positionals[@]}";
 trap on_interrupt INT;
 
 
-if [ "$_triggerSCHelp" == "0" ];then
-	__subcommand+=("--help");
-fi
-if [ "$_verbose_level" -ne "0" ];then
-	__subcommand+=("--verbose" "$_verbose_level");
-fi
-"${__subcommand[@]}";
 
 # @parseArger-parsing-end
 # print_debug "$@"
 # @parseArger-end
+
+case "${_arg_target}" in
+	cpu|arm)
+		vcgencmd get_mem arm | sed -e "s/gpu=//g" -e "s/M//g";
+	;;
+	gpu)
+		vcgencmd get_mem gpu | sed -e "s/gpu=//g" -e "s/M//g";
+	;;
+	*)
+		(($(vcgencmd get_mem gpu | sed -e "s/gpu=//g" -e "s/M//g") + $(vcgencmd get_mem arm | sed -e "s/arm=//g" -e "s/M//g")));
+	;;
+esac
