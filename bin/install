@@ -501,7 +501,7 @@ if [ "$_triggerSCHelp" == "" ]; then
 fi
 
 if [ "$_arg_target" != "" ]; then
-	# echo "TODO";
+	__subcommand+=(--no-install-from-script "${_arg_leftovers[@]}");
 	"${__subcommand[@]}";
 else
 	if [ "$_triggerSCHelp" == "1" ]; then

@@ -74,8 +74,9 @@ install using apt:
 	--config <config>: config file path [default: ' __home__/.config/MyPi ']
 	--use-config|--no-use-config: use a config file, on by default (use --no-use-config to turn it off)
 		no-aliases: --no-config,
+	--install-from-config|--no-install-from-config: install from config, on by default (use --no-install-from-config to turn it off)
 Usage :
-	MyPi install apt [--cmd <value>] [--package <value>] [--config <value>] [--[no-]use-config]
+	MyPi install apt [--cmd <value>] [--package <value>] [--config <value>] [--[no-]use-config] [--[no-]install-from-config]
 ```
 
 #### MyPi install docker
@@ -85,8 +86,9 @@ install docker:
 	--config <config>: config file path [default: ' __home__/.config/MyPi ']
 	--use-config|--no-use-config: use a config file, on by default (use --no-use-config to turn it off)
 		no-aliases: --no-config,
+	--install-from-config|--no-install-from-config: install from config, on by default (use --no-install-from-config to turn it off)
 Usage :
-	MyPi install docker [--config <value>] [--[no-]use-config]
+	MyPi install docker [--config <value>] [--[no-]use-config] [--[no-]install-from-config]
 ```
 
 #### MyPi install docker-cmd
@@ -97,8 +99,9 @@ run docker command:
 	-c, --cmd <cmd>: docker command, repeatable
 	--use-config|--no-use-config: use a config file, on by default (use --no-use-config to turn it off)
 		no-aliases: --no-config,
+	--install-from-config|--no-install-from-config: install from config, on by default (use --no-install-from-config to turn it off)
 Usage :
-	MyPi install docker-cmd [--config <value>] [--cmd <value>] [--[no-]use-config]
+	MyPi install docker-cmd [--config <value>] [--cmd <value>] [--[no-]use-config] [--[no-]install-from-config]
 ```
 
 #### MyPi install git
@@ -110,8 +113,9 @@ install using git:
 	--config <config>: config file path [default: ' __home__/.config/MyPi ']
 	--use-config|--no-use-config: use a config file, on by default (use --no-use-config to turn it off)
 		no-aliases: --no-config,
+	--install-from-config|--no-install-from-config: install from config, on by default (use --no-install-from-config to turn it off)
 Usage :
-	MyPi install git [--repo <value>] [--directory <value>] [--config <value>] [--[no-]use-config]
+	MyPi install git [--repo <value>] [--directory <value>] [--config <value>] [--[no-]use-config] [--[no-]install-from-config]
 ```
 
 #### MyPi install omz
@@ -122,8 +126,9 @@ install oh my zsh:
 	-p, --plugin <plugin>: plugin to enable, repeatable
 	--use-config|--no-use-config: use a config file, on by default (use --no-use-config to turn it off)
 		no-aliases: --no-config,
+	--install-from-config|--no-install-from-config: install from config, on by default (use --no-install-from-config to turn it off)
 Usage :
-	MyPi install omz [--config <value>] [--plugin <value>] [--[no-]use-config]
+	MyPi install omz [--config <value>] [--plugin <value>] [--[no-]use-config] [--[no-]install-from-config]
 ```
 
 ### MyPi mesure

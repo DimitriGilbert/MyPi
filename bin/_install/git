@@ -7,6 +7,7 @@
 # @parseArger opt directory "clone to" --short d
 # @parseArger opt config "config file path" --default-value "__home__/.config/MyPi"
 # @parseArger flag use-config "use a config file" --on --no-alias no-config
+# @parseArger flag install-from-config "install from config" --on
 # @parseArger-declarations-end
 
 # @parseArger-utils
@@ -39,6 +40,7 @@ _arg_directory=
 _arg_config="__home__/.config/MyPi"
 # FLAGS
 _arg_use_config="on"
+_arg_install_from_config="on"
 _verbose_level="0";
 
 
@@ -55,8 +57,9 @@ print_help()
 	echo -e "	--config <config>: config file path [default: ' __home__/.config/MyPi ']"
 	echo -e "	--use-config|--no-use-config: use a config file, on by default (use --no-use-config to turn it off)
 		no-aliases: --no-config,"
+	echo -e "	--install-from-config|--no-install-from-config: install from config, on by default (use --no-install-from-config to turn it off)"
 	echo -e "Usage :
-	$0 [--repo <value>] [--directory <value>] [--config <value>] [--[no-]use-config]";
+	$0 [--repo <value>] [--directory <value>] [--config <value>] [--[no-]use-config] [--[no-]install-from-config]";
 	fi
 
 }
@@ -138,6 +141,12 @@ parse_commandline()
 			--no-use-config|--no-config)
 				_arg_use_config="off"
 				;;
+			--install-from-config)
+				_arg_install_from_config="on"
+				;;
+			--no-install-from-config)
+				_arg_install_from_config="off"
+				;;
 			-h|--help)
 				print_help;
 				exit 0;
@@ -218,6 +227,7 @@ print_debug()
 	echo -e "\tdirectory: ${_arg_directory}";
 	echo -e "\tconfig: ${_arg_config}";
 	echo -e "\tuse-config: ${_arg_use_config}";
+	echo -e "\tinstall-from-config: ${_arg_install_from_config}";
 
 }
 
@@ -247,7 +257,7 @@ if [ "$_arg_use_config" != "off" ] && [ -f "$_arg_config" ]; then
 fi
 
 gitCmd=(git clone);
-if [ "${#MyPi_git_repo[@]}" -gt 0 ]; then
+if [ "$_arg_install_from_config" != "off" ] && [ "$_arg_use_config" != "off" ] && [ "${#MyPi_git_repo[@]}" -gt 0 ]; then
 	log "${#MyPi_git_repo[@]} git repos from config" 1;
 	for((i=0;i<${#MyPi_git_repo[@]};i++)); do
 		log "cloning ${MyPi_git_repo[$i]}" 1;

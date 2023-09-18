@@ -6,6 +6,7 @@
 # @parseArger opt config "config file path" --default-value "__home__/.config/MyPi"
 # @parseArger opt plugin "plugin to enable" --short p --repeat
 # @parseArger flag use-config "use a config file" --on --no-alias no-config
+# @parseArger flag install-from-config "install from config" --on
 # @parseArger-declarations-end
 
 # @parseArger-utils
@@ -37,6 +38,7 @@ _arg_config="__home__/.config/MyPi"
 _arg_plugin=()
 # FLAGS
 _arg_use_config="on"
+_arg_install_from_config="on"
 _verbose_level="0";
 
 
@@ -52,8 +54,9 @@ print_help()
 	echo -e "	-p, --plugin <plugin>: plugin to enable, repeatable"
 	echo -e "	--use-config|--no-use-config: use a config file, on by default (use --no-use-config to turn it off)
 		no-aliases: --no-config,"
+	echo -e "	--install-from-config|--no-install-from-config: install from config, on by default (use --no-install-from-config to turn it off)"
 	echo -e "Usage :
-	$0 [--config <value>] [--plugin <value>] [--[no-]use-config]";
+	$0 [--config <value>] [--plugin <value>] [--[no-]use-config] [--[no-]install-from-config]";
 	fi
 
 }
@@ -64,28 +67,28 @@ log() {
 	if [ "${_arg_level}" -le "${_verbose_level}" ]; then
 		case "$_arg_level" in
 			-3)
-				_arg_COLOR="[0;31m";
+				_arg_COLOR="\033[0;31m";
 				;;
 			-2)
-				_arg_COLOR="[0;33m";
+				_arg_COLOR="\033[0;33m";
 				;;
 			-1)
-				_arg_COLOR="[1;33m";
+				_arg_COLOR="\033[1;33m";
 				;;
 			1)
-				_arg_COLOR="[0;32m";
+				_arg_COLOR="\033[0;32m";
 				;;
 			2)
-				_arg_COLOR="[1;36m";
+				_arg_COLOR="\033[1;36m";
 				;;
 			3)
-				_arg_COLOR="[0;36m";
+				_arg_COLOR="\033[0;36m";
 				;;
 			*)
-				_arg_COLOR="[0m";
+				_arg_COLOR="\033[0m";
 				;;
 		esac
-		echo -e "${_arg_COLOR}${_arg_msg}[0m";
+		echo -e "${_arg_COLOR}${_arg_msg}\033[0m";
 	fi
 }
 
@@ -122,6 +125,12 @@ parse_commandline()
 				;;
 			--no-use-config|--no-config)
 				_arg_use_config="off"
+				;;
+			--install-from-config)
+				_arg_install_from_config="on"
+				;;
+			--no-install-from-config)
+				_arg_install_from_config="off"
 				;;
 			-h|--help)
 				print_help;
@@ -171,8 +180,7 @@ handle_passed_args_count()
 {
 	local _required_args_string=""
 	if [ "${_positionals_count}" -gt 0 ] && [ "$_helpHasBeenPrinted" == "1" ];then
-		_PRINT_HELP=yes die "FATAL ERROR: There were spurious positional arguments --- we expect at most 0 (namely: $_required_args_string), but got ${_positionals_count} (the last one was: '${_last_positional}').
-	${_positionals[*]}" 1
+		_PRINT_HELP=yes die "FATAL ERROR: There were spurious positional arguments --- we expect at most 0 (namely: $_required_args_string), but got ${_positionals_count} (the last one was: '${_last_positional}').\n\t${_positionals[*]}" 1
 	fi
 	if [ "${_positionals_count}" -lt 0 ] && [ "$_helpHasBeenPrinted" == "1" ];then
 		_PRINT_HELP=yes die "FATAL ERROR: Not enough positional arguments - we require at least 0 (namely: $_required_args_string), but got only ${_positionals_count}.
@@ -200,9 +208,10 @@ print_debug()
 	# shellcheck disable=SC2145
 	echo "DEBUG: $0 $@";
 	
-	echo -e "	config: ${_arg_config}";
-	echo -e "	plugin: ${_arg_plugin[*]}";
-	echo -e "	use-config: ${_arg_use_config}";
+	echo -e "\tconfig: ${_arg_config}";
+	echo -e "\tplugin: ${_arg_plugin[*]}";
+	echo -e "\tuse-config: ${_arg_use_config}";
+	echo -e "\tinstall-from-config: ${_arg_install_from_config}";
 
 }
 
@@ -231,10 +240,13 @@ if [ "$_arg_use_config" != "off" ] && [ -f "$_arg_config" ]; then
 	source "$_arg_config";
 fi
 
-log "installing oh my zsh" 1;
-RUNZSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)";
+if [ "$_arg_install_from_config" != "off" ];then
+	log "installing oh my zsh" 1;
+	RUNZSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)";
+fi
+
 enPlg=();
-if [ "$_arg_use_config" != "off" ] && [ -f "$_arg_config" ]; then
+if [ "$_arg_install_from_config" != "off" ] && [ "$_arg_use_config" != "off" ] && [ "${#MyPi_omz_plugin[@]}" -gt 0 ]; then
 	log "enabling omz plugins from config" 1;
 	for omzp in "${MyPi_omz_plugin[@]}"; do
 		if ! echo " ${enPlg[*]} " | grep -q " $omzp "; then
@@ -244,9 +256,11 @@ if [ "$_arg_use_config" != "off" ] && [ -f "$_arg_config" ]; then
 		fi
 	done
 fi
+
 if [ "${#_arg_plugin[@]}" -gt 0 ]; then
 	log "${#_arg_plugin[@]} omz plugins from cli" 1;
 	for omzp in "${_arg_plugin[@]}"; do
+		# TODO check if already enabled in omz
 		if ! echo " ${enPlg[*]} " | grep -q " $omzp "; then
 			log "enabling $omzp" 1;
 			sed -i "s/plugins=(git)/plugins=(git $omzp)/g" ~/.zshrc;
