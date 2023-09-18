@@ -233,17 +233,29 @@ fi
 
 log "installing oh my zsh" 1;
 RUNZSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)";
-if [ "${#_arg_plugin[@]}" -gt 0 ]; then
-	log "${#_arg_plugin[@]} omz plugins from cli" 1;
-	for omzp in "${_arg_plugin[@]}"; do
-		log "enabling $omzp" 1;
-		sed -i "s/plugins=(git)/plugins=(git $omzp)/g" ~/.zshrc;
-	done
-fi
+enPlg=();
 if [ "$_arg_use_config" != "off" ] && [ -f "$_arg_config" ]; then
 	log "enabling omz plugins from config" 1;
 	for omzp in "${MyPi_omz_plugin[@]}"; do
-		log "enabling $omzp" 1;
-		sed -i "s/plugins=(git)/plugins=(git $omzp)/g" ~/.zshrc;
+		if ! echo " ${enPlg[*]} " | grep -q " $omzp "; then
+			log "enabling $omzp" 1;
+			sed -i "s/plugins=(git)/plugins=(git $omzp)/g" ~/.zshrc;
+			enPlg+=("$omzp");
+		fi
 	done
+fi
+if [ "${#_arg_plugin[@]}" -gt 0 ]; then
+	log "${#_arg_plugin[@]} omz plugins from cli" 1;
+	for omzp in "${_arg_plugin[@]}"; do
+		if ! echo " ${enPlg[*]} " | grep -q " $omzp "; then
+			log "enabling $omzp" 1;
+			sed -i "s/plugins=(git)/plugins=(git $omzp)/g" ~/.zshrc;
+			enPlg+=("$omzp");
+		fi
+	done
+fi
+
+if [ "$_arg_use_config" != "off" ] && [ -f "$_arg_config" ]; then
+	# updating config
+	sed -i "s/MyPi_omz_plugin=.*/MyPi_omz_plugin=(${enPlg[*]})/" "$_arg_config";
 fi

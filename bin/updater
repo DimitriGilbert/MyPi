@@ -314,12 +314,15 @@ if [ "$_arg_docker" == "on" ] && [ "${#MyPi_docker_images[@]}" -gt 0 ]; then
 		log "docker pulling $image" 1;
 		docker pull --quiet "$image";
 	done
+	sudo systemctl restart docker;
 fi
 
+# dist-upgrade
 if [ "$_arg_dist_upgrade" == "on" ]; then
 	sudo apt dist-upgrade -y -qq --progress-bar;
 fi
 
+# shutdown/reboot
 if [ "$_arg_shutdown" != "" ]; then
 	log "shutting down in $_arg_shutdown" 1;
 	sudo shutdown "$_arg_shutdown";
