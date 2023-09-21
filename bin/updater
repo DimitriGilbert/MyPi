@@ -300,7 +300,7 @@ if [ "$_arg_apt" == "on" ]; then
 	sudo apt autoclean -y -qq;
 fi
 
-if [ "$_arg_git" == "on" ] && [ "${#MyPi_git_repo[@]}" -gt 0 ]; then
+if command -v git  && [ "$_arg_git" == "on" ] && [ "${#MyPi_git_repo[@]}" -gt 0 ]; then
 	for repo in "${MyPi_git_repo[@]}"; do
 		log "git pulling $repo" 1;
 		# shellcheck disable=SC2164
@@ -309,7 +309,7 @@ if [ "$_arg_git" == "on" ] && [ "${#MyPi_git_repo[@]}" -gt 0 ]; then
 fi
 
 # docker
-if [ "$_arg_docker" == "on" ] && [ "${#MyPi_docker_images[@]}" -gt 0 ]; then
+if command -v docker && [ "$_arg_docker" == "on" ] && [ "${#MyPi_docker_images[@]}" -gt 0 ]; then
 	for image in "${MyPi_docker_images[@]}"; do
 		log "docker pulling $image" 1;
 		docker pull --quiet "$image";

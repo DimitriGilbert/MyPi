@@ -28,6 +28,38 @@ _MyPi_completions() {
   local compline="${compwords[*]}"
 
   case "$compline" in
+    'install docker-cmd'*)
+      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_MyPi_completions_filter "--config --cmd -c --use-config --no-use-config --no-config --install-from-config --no-install-from-config")" -- "$cur" )
+      ;;
+
+    'install docker'*)
+      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_MyPi_completions_filter "--config --use-config --no-use-config --no-config --install-from-config --no-install-from-config")" -- "$cur" )
+      ;;
+
+    'install apt'*)
+      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_MyPi_completions_filter "--cmd --package -p --config --use-config --no-use-config --no-config --install-from-config --no-install-from-config")" -- "$cur" )
+      ;;
+
+    'install git'*)
+      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_MyPi_completions_filter "--repo -r --directory -d --config --use-config --no-use-config --no-config --install-from-config --no-install-from-config")" -- "$cur" )
+      ;;
+
+    'install omz'*)
+      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_MyPi_completions_filter "--config --plugin -p --use-config --no-use-config --no-config --install-from-config --no-install-from-config")" -- "$cur" )
+      ;;
+
+    'mesure cpu'*)
+      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_MyPi_completions_filter "temperature temp voltage volt frequency freq clock ram mem memory")" -- "$cur" )
+      ;;
+
+    'mesure gpu'*)
+      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_MyPi_completions_filter "ram voltage volt frequency freq clock")" -- "$cur" )
+      ;;
+
+    'mesure ram'*)
+      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_MyPi_completions_filter "cpu arm gpu")" -- "$cur" )
+      ;;
+
     'nfs-export'*)
       while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_MyPi_completions_filter "--config --export -e --directory -d --host --ip -i --options -o --use-config --no-use-config --no-config")" -- "$cur" )
       ;;
