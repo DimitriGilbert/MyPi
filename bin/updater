@@ -38,6 +38,7 @@ begins_with_short_option()
 
 # POSITIONALS ARGUMENTS
 _positionals=();
+_optional_positionals=();
 # OPTIONALS ARGUMENTS
 _arg_config="__home__/.config/MyPi"
 _arg_shutdown=
@@ -61,7 +62,7 @@ print_help()
 		_helpHasBeenPrinted=0;
 		echo -e "update everything:"
 	echo -e "	--config <config>: config file path [default: ' __home__/.config/MyPi ']"
-	echo -e "	--shutdown <shutdown>: shutdown, can be empty [empty value: 'now']"
+	echo -e "	--shutdown <shutdown>: shutdown"
 	echo -e "	--use-config|--no-use-config: use a config file, on by default (use --no-use-config to turn it off)
 		no-aliases: --no-config,"
 	echo -e "	--apt|--no-apt: update apt, on by default (use --no-apt to turn it off)"
@@ -78,32 +79,32 @@ print_help()
 
 log() {
 	local _arg_msg="${1}";
-	local _arg_level="${2:"0"}";
+	local _arg_level="${2:0}";
 	if [ "${_arg_level}" -le "${_verbose_level}" ]; then
 		case "$_arg_level" in
 			-3)
-				_arg_COLOR="[0;31m";
+				_arg_COLOR="\033[0;31m";
 				;;
 			-2)
-				_arg_COLOR="[0;33m";
+				_arg_COLOR="\033[0;33m";
 				;;
 			-1)
-				_arg_COLOR="[1;33m";
+				_arg_COLOR="\033[1;33m";
 				;;
 			1)
-				_arg_COLOR="[0;32m";
+				_arg_COLOR="\033[0;32m";
 				;;
 			2)
-				_arg_COLOR="[1;36m";
+				_arg_COLOR="\033[1;36m";
 				;;
 			3)
-				_arg_COLOR="[0;36m";
+				_arg_COLOR="\033[0;36m";
 				;;
 			*)
-				_arg_COLOR="[0m";
+				_arg_COLOR="\033[0m";
 				;;
 		esac
-		echo -e "${_arg_COLOR}${_arg_msg}[0m";
+		echo -e "${_arg_COLOR}${_arg_msg}\033[0m";
 	fi
 }
 
@@ -124,11 +125,9 @@ parse_commandline()
 				;;
 			
 			--shutdown)
-				if [ $# -lt 2 ];then
-					_arg_shutdown="now";
-				else
-					_arg_shutdown="$2";
-				fi
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_shutdown="$2"
+				shift
 				;;
 			--shutdown=*)
 				_arg_shutdown="${_key##--shutdown=}"
@@ -224,8 +223,7 @@ handle_passed_args_count()
 {
 	local _required_args_string=""
 	if [ "${_positionals_count}" -gt 0 ] && [ "$_helpHasBeenPrinted" == "1" ];then
-		_PRINT_HELP=yes die "FATAL ERROR: There were spurious positional arguments --- we expect at most 0 (namely: $_required_args_string), but got ${_positionals_count} (the last one was: '${_last_positional}').
-	${_positionals[*]}" 1
+		_PRINT_HELP=yes die "FATAL ERROR: There were spurious positional arguments --- we expect at most 0 (namely: $_required_args_string), but got ${_positionals_count} (the last one was: '${_last_positional}').\n\t${_positionals[*]}" 1
 	fi
 	if [ "${_positionals_count}" -lt 0 ] && [ "$_helpHasBeenPrinted" == "1" ];then
 		_PRINT_HELP=yes die "FATAL ERROR: Not enough positional arguments - we require at least 0 (namely: $_required_args_string), but got only ${_positionals_count}.
@@ -253,15 +251,15 @@ print_debug()
 	# shellcheck disable=SC2145
 	echo "DEBUG: $0 $@";
 	
-	echo -e "	config: ${_arg_config}";
-	echo -e "	shutdown: ${_arg_shutdown}";
-	echo -e "	use-config: ${_arg_use_config}";
-	echo -e "	apt: ${_arg_apt}";
-	echo -e "	git: ${_arg_git}";
-	echo -e "	docker: ${_arg_docker}";
-	echo -e "	dist-upgrade: ${_arg_dist_upgrade}";
-	echo -e "	apt-clean: ${_arg_apt_clean}";
-	echo -e "	reboot: ${_arg_reboot}";
+	echo -e "\tconfig: ${_arg_config}";
+	echo -e "\tshutdown: ${_arg_shutdown}";
+	echo -e "\tuse-config: ${_arg_use_config}";
+	echo -e "\tapt: ${_arg_apt}";
+	echo -e "\tgit: ${_arg_git}";
+	echo -e "\tdocker: ${_arg_docker}";
+	echo -e "\tdist-upgrade: ${_arg_dist_upgrade}";
+	echo -e "\tapt-clean: ${_arg_apt_clean}";
+	echo -e "\treboot: ${_arg_reboot}";
 
 }
 
