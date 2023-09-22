@@ -200,6 +200,6 @@ case "${_arg_target}" in
 		vcgencmd get_mem gpu | sed -e "s/gpu=//g" -e "s/M//g";
 	;;
 	*)
-		(($(vcgencmd get_mem gpu | sed -e "s/gpu=//g" -e "s/M//g") + $(vcgencmd get_mem arm | sed -e "s/arm=//g" -e "s/M//g")));
+		echo "(($(vcgencmd get_mem gpu | sed -e "s/gpu=//g" -e "s/M//g") + $(vcgencmd get_mem arm | sed -e "s/arm=//g" -e "s/M//g")))";
 	;;
 esac
