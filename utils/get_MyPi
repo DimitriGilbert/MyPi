@@ -281,9 +281,9 @@ if [ "$_arg_zip" != "on" ] && [ "$(command -v git)" ]; then
 	ecmd+=(git clone);
 
 	if [ "$_arg_ssh" == "on" ]; then
-		ecmd+=("git@github:.git");
+		ecmd+=("git@github.com:DimitriGilbert/MyPi.git");
 	else
-		ecmd+=("https://github/.git");
+		ecmd+=("https://github.com/DimitriGilbert/MyPi.git");
 	fi
 
 	if [ "$_arg_branch" != "" ]; then
@@ -302,7 +302,7 @@ else
 	fi
 	_arg_zip="on";
 	log "Install using zip, it is not recommended" -1;
-	ecmd+=(curl "https://github//archive/refs/heads/${_arg_branch}.zip/${_arg_branch}.zip" -LJO);
+	ecmd+=(curl "https://github.com/DimitriGilbert/MyPi/archive/refs/heads/${_arg_branch}.zip/${_arg_branch}.zip" -LJO);
 	zcmd=(unzip -qq);
 	zcmd2=(mv);
 
