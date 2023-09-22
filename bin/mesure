@@ -4,7 +4,7 @@
 # @parseArger-verbose --option "verbose" --level "0" --quiet-option "quiet"
 # @parseArger-leftovers leftovers
 # @parseArger-declarations
-# @parseArger pos target "mesure what" --subcommand-directory "bin/_mesure" --subcommand-run --subcommand --one-of "cpu" --one-of "gpu" --one-of "ram"
+# @parseArger pos target "mesure what" --subcommand-directory "bin/_mesure" --subcommand-run --subcommand-use-leftovers --subcommand --one-of "cpu" --one-of "gpu" --one-of "ram"
 # @parseArger-declarations-end
 
 # @parseArger-utils
@@ -33,7 +33,7 @@ begins_with_short_option()
 _positionals=();
 _optional_positionals=();
 _arg_target="";
-_one_of_arg_target=("cpu" "gpu" "ram" );
+_one_of_arg_target=("cpu" "gpu" "ram" "cpu" );
 _arg_subcommand_arg="_arg_target";
 __subcommand=();
 # OPTIONALS ARGUMENTS
@@ -58,7 +58,7 @@ print_help()
 	if [[ "$_helpHasBeenPrinted" == "1" ]]; then
 		_helpHasBeenPrinted=0;
 		echo -e "I send an SOS to the world:"
-	echo -e "	target: mesure what [one of 'cpu' 'gpu' 'ram']"
+	echo -e "	target: mesure what [one of 'cpu' 'gpu' 'ram' 'cpu']"
 	echo -e "Usage :
 	$0 <target>";
 	fi
@@ -216,6 +216,7 @@ assign_positional_args 1 "${_positionals[@]}";
 trap on_interrupt INT;
 
 
+__subcommand+=("${_arg_leftovers[@]}");
 if [ "$_triggerSCHelp" == "0" ];then
 	__subcommand+=("--help");
 fi
