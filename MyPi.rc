@@ -1,0 +1,3 @@
+
+alias MyPi="${MyPi_DIR}/MyPi";
+source "${MyPi_DIR}/completely.bash"
