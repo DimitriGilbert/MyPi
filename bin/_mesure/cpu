@@ -199,7 +199,7 @@ case "${_arg_target}" in
 		vcgencmd measure_volts core | sed -e "s/volt=//g" -e "s/V//g";
 	;;
 	frequency|freq|clock)
-		vcgencmd measure_clock arm | sed -e "s/clock=//g" -e "s/HZ//g";
+		vcgencmd measure_clock arm | sed -e "s/frequency(48)=//g" -e "s/HZ//g" | awk '{printf "%.2f\n", $1/1000000}';
 	;;
 	ram|mem|memory)
 		vcgencmd get_mem arm | sed -e "s/arm=//g" -e "s/M//g";

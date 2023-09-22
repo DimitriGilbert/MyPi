@@ -194,7 +194,7 @@ trap on_interrupt INT;
 
 case "${_arg_target}" in
 	cpu|arm)
-		vcgencmd get_mem arm | sed -e "s/gpu=//g" -e "s/M//g";
+		vcgencmd get_mem arm | sed -e "s/arm=//g" -e "s/M//g";
 	;;
 	gpu)
 		vcgencmd get_mem gpu | sed -e "s/gpu=//g" -e "s/M//g";
