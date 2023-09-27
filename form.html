@@ -1,0 +1,1451 @@
+<form id="MyPi">
+	<h2>MyPi form</h2>
+	<div class="form-group">
+		<label for="target" class="form-label">target</label>
+		<span class="input-help">what should we do ?</span>
+		<select pa-type="pos" name="target" id="target" required class="form-select">
+
+			<option value="add-fstab">add-fstab</option>
+			<option value="install">install</option>
+			<option value="mesure">mesure</option>
+			<option value="nfs-export">nfs-export</option>
+			<option value="updater">updater</option>
+		</select>
+	</div><button id="MyPi_parse_btn">Parse</button>
+	<pre id="MyPi_result"></pre>
+	<pre id="MyPi_server_response"></pre>
+</form>
+<div id="_subcommands">
+	<h3>Subcommand forms</h3>
+	<div class="d-none subcmd-container-target" id="target_add-fstab_container">
+		<form id="bin_add_fstab">
+			<h2>add-fstab form</h2>
+			<div class="form-group">
+				<label for="config" class="form-label">config</label>
+				<span class="input-help">config file path</span>
+				<input class="form-control" pa-type="opt" name="config" id="config" type="text" value="__home__/.config/MyPi" />
+			</div>
+			<div class="form-group">
+				<label for="line" class="form-label">line</label>
+				<span class="input-help">/etc/fstab entry</span>
+				<textarea pa-type="opt" name="line" id="line" type="text" pa-repeat class="form-control"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="file-system" class="form-label">file-system</label>
+				<span class="input-help">The device or file system to be mounted</span>
+				<textarea pa-type="opt" name="file-system" id="file-system" type="text" pa-repeat
+					class="form-control"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="mount-point" class="form-label">mount-point</label>
+				<span class="input-help">The directory where the file system should be mounted</span>
+				<textarea pa-type="opt" name="mount-point" id="mount-point" type="text" pa-repeat
+					class="form-control"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="type" class="form-label">type</label>
+				<span class="input-help">The type of file system</span>
+				<textarea pa-type="opt" name="type" id="type" type="text" pa-repeat class="form-control"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="options" class="form-label">options</label>
+				<span class="input-help">The mount options for the file system</span>
+				<textarea pa-type="opt" name="options" id="options" type="text" pa-repeat class="form-control"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="dump" class="form-label">dump</label>
+				<span class="input-help">This field is used by the dump, 0 to disable</span>
+				<textarea pa-type="opt" name="dump" id="dump" type="text" pa-repeat class="form-control"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="pass" class="form-label">pass</label>
+				<span class="input-help">This field is used by the fsck, 0 to disable</span>
+				<textarea pa-type="opt" name="pass" id="pass" type="text" pa-repeat class="form-control"></textarea>
+			</div>
+			<div class="form-check">
+				<label for="use-config" class="form-check-label">use-config</label>
+				<i class="input-help">use a config file</i>
+				<input class="form-check-input" type="checkbox" role="switch" name="use-config" id="use-config"
+					value="use-config" pa-type="flag" checked />
+			</div><button id="bin_add_fstab_parse_btn">Parse</button>
+			<pre id="bin_add_fstab_result"></pre>
+			<pre id="bin_add_fstab_server_response"></pre>
+		</form>
+		<script type="text/javascript">
+			function bin_add_fstab_parse(__form) {
+				let bin_add_fstab_frm = new FormData(__form);
+				let out = '';
+				for (const inp of bin_add_fstab_frm.keys()) {
+					const ielt = document.getElementById(inp);
+					switch (ielt.getAttribute('pa-type')) {
+						case 'pos':
+							if (/[\s!@#$%^&*()_+=[\]{};':"\|,.<>/?]/.test(bin_add_fstab_frm.get(inp))) {
+								out += ' "' + bin_add_fstab_frm.get(inp) + '"';
+							} else {
+								out += ' ' + bin_add_fstab_frm.get(inp);
+							}
+							break;
+						case 'opt':
+							if (bin_add_fstab_frm.get(inp) !== '') {
+								if (ielt.hasAttribute('pa-repeat')) {
+									for (const val of bin_add_fstab_frm.get(inp).split(`
+`)) {
+										out += ' --' + inp + ' "' + val + '"';
+									}
+								} else {
+									out += ' --' + inp + ' "' + bin_add_fstab_frm.get(inp) + '"';
+								}
+							}
+							break;
+						case 'flag':
+							if (ielt.checked === true) {
+								out += ' --' + inp;
+							} else {
+								out += ' --no-' + inp;
+							}
+							break;
+					}
+				}
+				// document.getElementById('MyPi_parse_btn').parentNode.dispatchEvent(new Event('submit'));
+				document.getElementById('MyPi_parse_btn').click();
+				out = document.getElementById('MyPi_result').innerHTML + out;
+				document.getElementById('MyPi_result').innerHTML = out;
+
+				document.getElementById('bin_add_fstab_result').innerHTML = out;
+			}
+			document.getElementById('bin_add_fstab').addEventListener('submit', function (e) {
+				e.preventDefault();
+				e.target.checkValidity();
+				bin_add_fstab_parse(e.target);
+				if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+					&& (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+					&& (window.location.port !== '80' && window.location.port !== '443')) {
+					fetch(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/form', {
+						method: 'POST',
+						body: document.getElementById('MyPi_result').innerHTML.replace(/add-fstab /g, '')
+					})
+						.then(response => response.text())
+						.then(result => {
+							document.getElementById('bin_add_fstab_server_response').innerHTML = result;
+						})
+						.catch(error => {
+							document.getElementById('bin_add_fstab_server_response').innerHTML = error;
+						});
+				}
+			});
+		</script>
+	</div>
+	<div class="d-none subcmd-container-target" id="target_install_container">
+		<form id="bin_install">
+			<h2>install form</h2>
+			<div class="form-group">
+				<label for="target" class="form-label">target</label>
+				<span class="input-help">subcommand</span>
+				<select pa-type="pos" name="target" id="target" class="form-select">
+
+					<option value="apt">apt</option>
+					<option value="docker">docker</option>
+					<option value="docker-cmd">docker-cmd</option>
+					<option value="git">git</option>
+					<option value="omz">omz</option>
+				</select>
+			</div>
+			<div class="form-group">
+				<label for="config" class="form-label">config</label>
+				<span class="input-help">config file</span>
+				<input class="form-control" pa-type="opt" name="config" id="config" type="text" value="__home__/.config/MyPi" />
+			</div>
+			<div class="form-group">
+				<label for="apt" class="form-label">apt</label>
+				<span class="input-help">apt package to install</span>
+				<textarea pa-type="opt" name="apt" id="apt" type="text" pa-repeat class="form-control"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="git" class="form-label">git</label>
+				<span class="input-help">git repo to clone</span>
+				<textarea pa-type="opt" name="git" id="git" type="text" pa-repeat class="form-control"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="git-clone-dir" class="form-label">git-clone-dir</label>
+				<span class="input-help">specify cloning directory, all repo with specific directory must be specify first and
+					index must match with --git</span>
+				<textarea pa-type="opt" name="git-clone-dir" id="git-clone-dir" type="text" pa-repeat
+					class="form-control"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="docker" class="form-label">docker</label>
+				<span class="input-help">docker command to execute</span>
+				<textarea pa-type="opt" name="docker" id="docker" type="text" pa-repeat class="form-control"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="mkdir" class="form-label">mkdir</label>
+				<span class="input-help">mkdir duh !</span>
+				<textarea pa-type="opt" name="mkdir" id="mkdir" type="text" pa-repeat class="form-control"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="mkdir-opt" class="form-label">mkdir-opt</label>
+				<span class="input-help">mkdir options</span>
+				<textarea pa-type="opt" name="mkdir-opt" id="mkdir-opt" type="text" pa-repeat class="form-control"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="fstab" class="form-label">fstab</label>
+				<span class="input-help">add line to fstab</span>
+				<textarea pa-type="opt" name="fstab" id="fstab" type="text" pa-repeat class="form-control"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="nfs-export" class="form-label">nfs-export</label>
+				<span class="input-help">line to add to /etc/exports</span>
+				<textarea pa-type="opt" name="nfs-export" id="nfs-export" type="text" pa-repeat class="form-control"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="post-install" class="form-label">post-install</label>
+				<span class="input-help">post install script path</span>
+				<textarea pa-type="opt" name="post-install" id="post-install" type="text" pa-repeat
+					class="form-control"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="omz-plugin" class="form-label">omz-plugin</label>
+				<span class="input-help">enable omz plugin</span>
+				<textarea pa-type="opt" name="omz-plugin" id="omz-plugin" type="text" pa-repeat class="form-control"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="apt-cmd" class="form-label">apt-cmd</label>
+				<span class="input-help">custom apt command, every option must be specified separatly</span>
+				<textarea pa-type="opt" name="apt-cmd" id="apt-cmd" type="text" pa-repeat class="form-control"></textarea>
+			</div>
+			<div class="form-group">
+				<label for="desktop" class="form-label">desktop</label>
+				<span class="input-help">desktop package to install</span>
+				<input class="form-control" pa-type="opt" name="desktop" id="desktop" type="text" value="mate" />
+			</div>
+			<div class="form-check">
+				<label for="apt-install" class="form-check-label">apt-install</label>
+				<i class="input-help">perform apt install</i>
+				<input class="form-check-input" type="checkbox" role="switch" name="apt-install" id="apt-install"
+					value="apt-install" pa-type="flag" checked />
+			</div>
+			<div class="form-check">
+				<label for="git-install" class="form-check-label">git-install</label>
+				<i class="input-help">perform git repos installation</i>
+				<input class="form-check-input" type="checkbox" role="switch" name="git-install" id="git-install"
+					value="git-install" pa-type="flag" checked />
+			</div>
+			<div class="form-check">
+				<label for="install-docker" class="form-check-label">install-docker</label>
+				<i class="input-help">install docker and docker compose</i>
+				<input class="form-check-input" type="checkbox" role="switch" name="install-docker" id="install-docker"
+					value="install-docker" pa-type="flag" checked />
+			</div>
+			<div class="form-check">
+				<label for="docker-install" class="form-check-label">docker-install</label>
+				<i class="input-help">perform docker install</i>
+				<input class="form-check-input" type="checkbox" role="switch" name="docker-install" id="docker-install"
+					value="docker-install" pa-type="flag" />
+			</div>
+			<div class="form-check">
+				<label for="install-nfs" class="form-check-label">install-nfs</label>
+				<i class="input-help">install nfs server</i>
+				<input class="form-check-input" type="checkbox" role="switch" name="install-nfs" id="install-nfs"
+					value="install-nfs" pa-type="flag" checked />
+			</div>
+			<div class="form-check">
+				<label for="reboot" class="form-check-label">reboot</label>
+				<i class="input-help">reboot when done</i>
+				<input class="form-check-input" type="checkbox" role="switch" name="reboot" id="reboot" value="reboot"
+					pa-type="flag" checked />
+			</div>
+			<div class="form-check">
+				<label for="install-omz" class="form-check-label">install-omz</label>
+				<i class="input-help">install oh-my-zsh</i>
+				<input class="form-check-input" type="checkbox" role="switch" name="install-omz" id="install-omz"
+					value="install-omz" pa-type="flag" checked />
+			</div>
+			<div class="form-check">
+				<label for="install-desktop" class="form-check-label">install-desktop</label>
+				<i class="input-help">install a desktop environment</i>
+				<input class="form-check-input" type="checkbox" role="switch" name="install-desktop" id="install-desktop"
+					value="install-desktop" pa-type="flag" checked />
+			</div><button id="bin_install_parse_btn">Parse</button>
+			<pre id="bin_install_result"></pre>
+			<pre id="bin_install_server_response"></pre>
+		</form>
+		<div id="_subcommands">
+			<h3>Subcommand forms</h3>
+			<div class="d-none subcmd-container-target" id="target_apt_container">
+				<form id="bin__install_apt">
+					<h2>apt form</h2>
+					<div class="form-group">
+						<label for="cmd" class="form-label">cmd</label>
+						<span class="input-help">apt command</span>
+						<textarea pa-type="opt" name="cmd" id="cmd" type="text" pa-repeat class="form-control"></textarea>
+					</div>
+					<div class="form-group">
+						<label for="package" class="form-label">package</label>
+						<span class="input-help">package to install</span>
+						<textarea pa-type="opt" name="package" id="package" type="text" pa-repeat class="form-control"></textarea>
+					</div>
+					<div class="form-group">
+						<label for="config" class="form-label">config</label>
+						<span class="input-help">config file path</span>
+						<input class="form-control" pa-type="opt" name="config" id="config" type="text"
+							value="__home__/.config/MyPi" />
+					</div>
+					<div class="form-check">
+						<label for="use-config" class="form-check-label">use-config</label>
+						<i class="input-help">use a config file</i>
+						<input class="form-check-input" type="checkbox" role="switch" name="use-config" id="use-config"
+							value="use-config" pa-type="flag" checked />
+					</div>
+					<div class="form-check">
+						<label for="install-from-config" class="form-check-label">install-from-config</label>
+						<i class="input-help">install from config</i>
+						<input class="form-check-input" type="checkbox" role="switch" name="install-from-config"
+							id="install-from-config" value="install-from-config" pa-type="flag" checked />
+					</div><button id="bin__install_apt_parse_btn">Parse</button>
+					<pre id="bin__install_apt_result"></pre>
+					<pre id="bin__install_apt_server_response"></pre>
+				</form>
+				<script type="text/javascript">
+					function bin__install_apt_parse(__form) {
+						let bin__install_apt_frm = new FormData(__form);
+						let out = '';
+						for (const inp of bin__install_apt_frm.keys()) {
+							const ielt = document.getElementById(inp);
+							switch (ielt.getAttribute('pa-type')) {
+								case 'pos':
+									if (/[\s!@#$%^&*()_+=[\]{};':"\|,.<>/?]/.test(bin__install_apt_frm.get(inp))) {
+										out += ' "' + bin__install_apt_frm.get(inp) + '"';
+									} else {
+										out += ' ' + bin__install_apt_frm.get(inp);
+									}
+									break;
+								case 'opt':
+									if (bin__install_apt_frm.get(inp) !== '') {
+										if (ielt.hasAttribute('pa-repeat')) {
+											for (const val of bin__install_apt_frm.get(inp).split(`
+`)) {
+												out += ' --' + inp + ' "' + val + '"';
+											}
+										} else {
+											out += ' --' + inp + ' "' + bin__install_apt_frm.get(inp) + '"';
+										}
+									}
+									break;
+								case 'flag':
+									if (ielt.checked === true) {
+										out += ' --' + inp;
+									} else {
+										out += ' --no-' + inp;
+									}
+									break;
+							}
+						}
+						// document.getElementById('bin_install_parse_btn').parentNode.dispatchEvent(new Event('submit'));
+						document.getElementById('bin_install_parse_btn').click();
+						out = document.getElementById('bin_install_result').innerHTML + out;
+						document.getElementById('bin_install_result').innerHTML = out;
+
+						document.getElementById('bin__install_apt_result').innerHTML = out;
+					}
+					document.getElementById('bin__install_apt').addEventListener('submit', function (e) {
+						e.preventDefault();
+						e.target.checkValidity();
+						bin__install_apt_parse(e.target);
+						if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+							&& (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+							&& (window.location.port !== '80' && window.location.port !== '443')) {
+							fetch(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/form', {
+								method: 'POST',
+								body: document.getElementById('bin_install_result').innerHTML.replace(/apt /g, '')
+							})
+								.then(response => response.text())
+								.then(result => {
+									document.getElementById('bin__install_apt_server_response').innerHTML = result;
+								})
+								.catch(error => {
+									document.getElementById('bin__install_apt_server_response').innerHTML = error;
+								});
+						}
+					});
+				</script>
+			</div>
+			<div class="d-none subcmd-container-target" id="target_docker_container">
+				<form id="bin__install_docker">
+					<h2>docker form</h2>
+					<div class="form-group">
+						<label for="config" class="form-label">config</label>
+						<span class="input-help">config file path</span>
+						<input class="form-control" pa-type="opt" name="config" id="config" type="text"
+							value="__home__/.config/MyPi" />
+					</div>
+					<div class="form-check">
+						<label for="use-config" class="form-check-label">use-config</label>
+						<i class="input-help">use a config file</i>
+						<input class="form-check-input" type="checkbox" role="switch" name="use-config" id="use-config"
+							value="use-config" pa-type="flag" checked />
+					</div>
+					<div class="form-check">
+						<label for="install-from-config" class="form-check-label">install-from-config</label>
+						<i class="input-help">install from config</i>
+						<input class="form-check-input" type="checkbox" role="switch" name="install-from-config"
+							id="install-from-config" value="install-from-config" pa-type="flag" checked />
+					</div><button id="bin__install_docker_parse_btn">Parse</button>
+					<pre id="bin__install_docker_result"></pre>
+					<pre id="bin__install_docker_server_response"></pre>
+				</form>
+				<script type="text/javascript">
+					function bin__install_docker_parse(__form) {
+						let bin__install_docker_frm = new FormData(__form);
+						let out = '';
+						for (const inp of bin__install_docker_frm.keys()) {
+							const ielt = document.getElementById(inp);
+							switch (ielt.getAttribute('pa-type')) {
+								case 'pos':
+									if (/[\s!@#$%^&*()_+=[\]{};':"\|,.<>/?]/.test(bin__install_docker_frm.get(inp))) {
+										out += ' "' + bin__install_docker_frm.get(inp) + '"';
+									} else {
+										out += ' ' + bin__install_docker_frm.get(inp);
+									}
+									break;
+								case 'opt':
+									if (bin__install_docker_frm.get(inp) !== '') {
+										if (ielt.hasAttribute('pa-repeat')) {
+											for (const val of bin__install_docker_frm.get(inp).split(`
+`)) {
+												out += ' --' + inp + ' "' + val + '"';
+											}
+										} else {
+											out += ' --' + inp + ' "' + bin__install_docker_frm.get(inp) + '"';
+										}
+									}
+									break;
+								case 'flag':
+									if (ielt.checked === true) {
+										out += ' --' + inp;
+									} else {
+										out += ' --no-' + inp;
+									}
+									break;
+							}
+						}
+						// document.getElementById('bin_install_parse_btn').parentNode.dispatchEvent(new Event('submit'));
+						document.getElementById('bin_install_parse_btn').click();
+						out = document.getElementById('bin_install_result').innerHTML + out;
+						document.getElementById('bin_install_result').innerHTML = out;
+
+						document.getElementById('bin__install_docker_result').innerHTML = out;
+					}
+					document.getElementById('bin__install_docker').addEventListener('submit', function (e) {
+						e.preventDefault();
+						e.target.checkValidity();
+						bin__install_docker_parse(e.target);
+						if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+							&& (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+							&& (window.location.port !== '80' && window.location.port !== '443')) {
+							fetch(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/form', {
+								method: 'POST',
+								body: document.getElementById('bin_install_result').innerHTML.replace(/docker /g, '')
+							})
+								.then(response => response.text())
+								.then(result => {
+									document.getElementById('bin__install_docker_server_response').innerHTML = result;
+								})
+								.catch(error => {
+									document.getElementById('bin__install_docker_server_response').innerHTML = error;
+								});
+						}
+					});
+				</script>
+			</div>
+			<div class="d-none subcmd-container-target" id="target_docker-cmd_container">
+				<form id="bin__install_docker_cmd">
+					<h2>docker-cmd form</h2>
+					<div class="form-group">
+						<label for="config" class="form-label">config</label>
+						<span class="input-help">config file path</span>
+						<input class="form-control" pa-type="opt" name="config" id="config" type="text"
+							value="__home__/.config/MyPi" />
+					</div>
+					<div class="form-group">
+						<label for="cmd" class="form-label">cmd</label>
+						<span class="input-help">docker command</span>
+						<textarea pa-type="opt" name="cmd" id="cmd" type="text" pa-repeat class="form-control"></textarea>
+					</div>
+					<div class="form-check">
+						<label for="use-config" class="form-check-label">use-config</label>
+						<i class="input-help">use a config file</i>
+						<input class="form-check-input" type="checkbox" role="switch" name="use-config" id="use-config"
+							value="use-config" pa-type="flag" checked />
+					</div>
+					<div class="form-check">
+						<label for="install-from-config" class="form-check-label">install-from-config</label>
+						<i class="input-help">install from config</i>
+						<input class="form-check-input" type="checkbox" role="switch" name="install-from-config"
+							id="install-from-config" value="install-from-config" pa-type="flag" checked />
+					</div><button id="bin__install_docker_cmd_parse_btn">Parse</button>
+					<pre id="bin__install_docker_cmd_result"></pre>
+					<pre id="bin__install_docker_cmd_server_response"></pre>
+				</form>
+				<script type="text/javascript">
+					function bin__install_docker_cmd_parse(__form) {
+						let bin__install_docker_cmd_frm = new FormData(__form);
+						let out = '';
+						for (const inp of bin__install_docker_cmd_frm.keys()) {
+							const ielt = document.getElementById(inp);
+							switch (ielt.getAttribute('pa-type')) {
+								case 'pos':
+									if (/[\s!@#$%^&*()_+=[\]{};':"\|,.<>/?]/.test(bin__install_docker_cmd_frm.get(inp))) {
+										out += ' "' + bin__install_docker_cmd_frm.get(inp) + '"';
+									} else {
+										out += ' ' + bin__install_docker_cmd_frm.get(inp);
+									}
+									break;
+								case 'opt':
+									if (bin__install_docker_cmd_frm.get(inp) !== '') {
+										if (ielt.hasAttribute('pa-repeat')) {
+											for (const val of bin__install_docker_cmd_frm.get(inp).split(`
+`)) {
+												out += ' --' + inp + ' "' + val + '"';
+											}
+										} else {
+											out += ' --' + inp + ' "' + bin__install_docker_cmd_frm.get(inp) + '"';
+										}
+									}
+									break;
+								case 'flag':
+									if (ielt.checked === true) {
+										out += ' --' + inp;
+									} else {
+										out += ' --no-' + inp;
+									}
+									break;
+							}
+						}
+						// document.getElementById('bin_install_parse_btn').parentNode.dispatchEvent(new Event('submit'));
+						document.getElementById('bin_install_parse_btn').click();
+						out = document.getElementById('bin_install_result').innerHTML + out;
+						document.getElementById('bin_install_result').innerHTML = out;
+
+						document.getElementById('bin__install_docker_cmd_result').innerHTML = out;
+					}
+					document.getElementById('bin__install_docker_cmd').addEventListener('submit', function (e) {
+						e.preventDefault();
+						e.target.checkValidity();
+						bin__install_docker_cmd_parse(e.target);
+						if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+							&& (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+							&& (window.location.port !== '80' && window.location.port !== '443')) {
+							fetch(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/form', {
+								method: 'POST',
+								body: document.getElementById('bin_install_result').innerHTML.replace(/docker-cmd /g, '')
+							})
+								.then(response => response.text())
+								.then(result => {
+									document.getElementById('bin__install_docker_cmd_server_response').innerHTML = result;
+								})
+								.catch(error => {
+									document.getElementById('bin__install_docker_cmd_server_response').innerHTML = error;
+								});
+						}
+					});
+				</script>
+			</div>
+			<div class="d-none subcmd-container-target" id="target_git_container">
+				<form id="bin__install_git">
+					<h2>git form</h2>
+					<div class="form-group">
+						<label for="repo" class="form-label">repo</label>
+						<span class="input-help">repo url</span>
+						<textarea pa-type="opt" name="repo" id="repo" type="text" pa-repeat class="form-control"></textarea>
+					</div>
+					<div class="form-group">
+						<label for="directory" class="form-label">directory</label>
+						<span class="input-help">clone to</span>
+						<input class="form-control" pa-type="opt" name="directory" id="directory" type="text" />
+					</div>
+					<div class="form-group">
+						<label for="config" class="form-label">config</label>
+						<span class="input-help">config file path</span>
+						<input class="form-control" pa-type="opt" name="config" id="config" type="text"
+							value="__home__/.config/MyPi" />
+					</div>
+					<div class="form-check">
+						<label for="use-config" class="form-check-label">use-config</label>
+						<i class="input-help">use a config file</i>
+						<input class="form-check-input" type="checkbox" role="switch" name="use-config" id="use-config"
+							value="use-config" pa-type="flag" checked />
+					</div>
+					<div class="form-check">
+						<label for="install-from-config" class="form-check-label">install-from-config</label>
+						<i class="input-help">install from config</i>
+						<input class="form-check-input" type="checkbox" role="switch" name="install-from-config"
+							id="install-from-config" value="install-from-config" pa-type="flag" checked />
+					</div><button id="bin__install_git_parse_btn">Parse</button>
+					<pre id="bin__install_git_result"></pre>
+					<pre id="bin__install_git_server_response"></pre>
+				</form>
+				<script type="text/javascript">
+					function bin__install_git_parse(__form) {
+						let bin__install_git_frm = new FormData(__form);
+						let out = '';
+						for (const inp of bin__install_git_frm.keys()) {
+							const ielt = document.getElementById(inp);
+							switch (ielt.getAttribute('pa-type')) {
+								case 'pos':
+									if (/[\s!@#$%^&*()_+=[\]{};':"\|,.<>/?]/.test(bin__install_git_frm.get(inp))) {
+										out += ' "' + bin__install_git_frm.get(inp) + '"';
+									} else {
+										out += ' ' + bin__install_git_frm.get(inp);
+									}
+									break;
+								case 'opt':
+									if (bin__install_git_frm.get(inp) !== '') {
+										if (ielt.hasAttribute('pa-repeat')) {
+											for (const val of bin__install_git_frm.get(inp).split(`
+`)) {
+												out += ' --' + inp + ' "' + val + '"';
+											}
+										} else {
+											out += ' --' + inp + ' "' + bin__install_git_frm.get(inp) + '"';
+										}
+									}
+									break;
+								case 'flag':
+									if (ielt.checked === true) {
+										out += ' --' + inp;
+									} else {
+										out += ' --no-' + inp;
+									}
+									break;
+							}
+						}
+						// document.getElementById('bin_install_parse_btn').parentNode.dispatchEvent(new Event('submit'));
+						document.getElementById('bin_install_parse_btn').click();
+						out = document.getElementById('bin_install_result').innerHTML + out;
+						document.getElementById('bin_install_result').innerHTML = out;
+
+						document.getElementById('bin__install_git_result').innerHTML = out;
+					}
+					document.getElementById('bin__install_git').addEventListener('submit', function (e) {
+						e.preventDefault();
+						e.target.checkValidity();
+						bin__install_git_parse(e.target);
+						if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+							&& (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+							&& (window.location.port !== '80' && window.location.port !== '443')) {
+							fetch(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/form', {
+								method: 'POST',
+								body: document.getElementById('bin_install_result').innerHTML.replace(/git /g, '')
+							})
+								.then(response => response.text())
+								.then(result => {
+									document.getElementById('bin__install_git_server_response').innerHTML = result;
+								})
+								.catch(error => {
+									document.getElementById('bin__install_git_server_response').innerHTML = error;
+								});
+						}
+					});
+				</script>
+			</div>
+			<div class="d-none subcmd-container-target" id="target_omz_container">
+				<form id="bin__install_omz">
+					<h2>omz form</h2>
+					<div class="form-group">
+						<label for="config" class="form-label">config</label>
+						<span class="input-help">config file path</span>
+						<input class="form-control" pa-type="opt" name="config" id="config" type="text"
+							value="__home__/.config/MyPi" />
+					</div>
+					<div class="form-group">
+						<label for="plugin" class="form-label">plugin</label>
+						<span class="input-help">plugin to enable</span>
+						<textarea pa-type="opt" name="plugin" id="plugin" type="text" pa-repeat class="form-control"></textarea>
+					</div>
+					<div class="form-check">
+						<label for="use-config" class="form-check-label">use-config</label>
+						<i class="input-help">use a config file</i>
+						<input class="form-check-input" type="checkbox" role="switch" name="use-config" id="use-config"
+							value="use-config" pa-type="flag" checked />
+					</div>
+					<div class="form-check">
+						<label for="install-from-config" class="form-check-label">install-from-config</label>
+						<i class="input-help">install from config</i>
+						<input class="form-check-input" type="checkbox" role="switch" name="install-from-config"
+							id="install-from-config" value="install-from-config" pa-type="flag" checked />
+					</div><button id="bin__install_omz_parse_btn">Parse</button>
+					<pre id="bin__install_omz_result"></pre>
+					<pre id="bin__install_omz_server_response"></pre>
+				</form>
+				<script type="text/javascript">
+					function bin__install_omz_parse(__form) {
+						let bin__install_omz_frm = new FormData(__form);
+						let out = '';
+						for (const inp of bin__install_omz_frm.keys()) {
+							const ielt = document.getElementById(inp);
+							switch (ielt.getAttribute('pa-type')) {
+								case 'pos':
+									if (/[\s!@#$%^&*()_+=[\]{};':"\|,.<>/?]/.test(bin__install_omz_frm.get(inp))) {
+										out += ' "' + bin__install_omz_frm.get(inp) + '"';
+									} else {
+										out += ' ' + bin__install_omz_frm.get(inp);
+									}
+									break;
+								case 'opt':
+									if (bin__install_omz_frm.get(inp) !== '') {
+										if (ielt.hasAttribute('pa-repeat')) {
+											for (const val of bin__install_omz_frm.get(inp).split(`
+`)) {
+												out += ' --' + inp + ' "' + val + '"';
+											}
+										} else {
+											out += ' --' + inp + ' "' + bin__install_omz_frm.get(inp) + '"';
+										}
+									}
+									break;
+								case 'flag':
+									if (ielt.checked === true) {
+										out += ' --' + inp;
+									} else {
+										out += ' --no-' + inp;
+									}
+									break;
+							}
+						}
+						// document.getElementById('bin_install_parse_btn').parentNode.dispatchEvent(new Event('submit'));
+						document.getElementById('bin_install_parse_btn').click();
+						out = document.getElementById('bin_install_result').innerHTML + out;
+						document.getElementById('bin_install_result').innerHTML = out;
+
+						document.getElementById('bin__install_omz_result').innerHTML = out;
+					}
+					document.getElementById('bin__install_omz').addEventListener('submit', function (e) {
+						e.preventDefault();
+						e.target.checkValidity();
+						bin__install_omz_parse(e.target);
+						if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+							&& (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+							&& (window.location.port !== '80' && window.location.port !== '443')) {
+							fetch(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/form', {
+								method: 'POST',
+								body: document.getElementById('bin_install_result').innerHTML.replace(/omz /g, '')
+							})
+								.then(response => response.text())
+								.then(result => {
+									document.getElementById('bin__install_omz_server_response').innerHTML = result;
+								})
+								.catch(error => {
+									document.getElementById('bin__install_omz_server_response').innerHTML = error;
+								});
+						}
+					});
+				</script>
+			</div>
+			<script>
+				document.getElementById("target").addEventListener("change", function () {
+					var val = this.value;
+					document.querySelectorAll(".subcmd-container-target").forEach(function (el) {
+						el.classList.add("d-none");
+					});
+					var subcmd = document.getElementById("target_" + val + "_container").classList.remove("d-none");
+				});
+			</script>
+		</div>
+	</div>
+	<script type="text/javascript">
+		function bin_install_parse(__form) {
+			let bin_install_frm = new FormData(__form);
+			let out = '';
+			for (const inp of bin_install_frm.keys()) {
+				const ielt = document.getElementById(inp);
+				switch (ielt.getAttribute('pa-type')) {
+					case 'pos':
+						if (/[\s!@#$%^&*()_+=[\]{};':"\|,.<>/?]/.test(bin_install_frm.get(inp))) {
+							out += ' "' + bin_install_frm.get(inp) + '"';
+						} else {
+							out += ' ' + bin_install_frm.get(inp);
+						}
+						break;
+					case 'opt':
+						if (bin_install_frm.get(inp) !== '') {
+							if (ielt.hasAttribute('pa-repeat')) {
+								for (const val of bin_install_frm.get(inp).split(`
+`)) {
+									out += ' --' + inp + ' "' + val + '"';
+								}
+							} else {
+								out += ' --' + inp + ' "' + bin_install_frm.get(inp) + '"';
+							}
+						}
+						break;
+					case 'flag':
+						if (ielt.checked === true) {
+							out += ' --' + inp;
+						} else {
+							out += ' --no-' + inp;
+						}
+						break;
+				}
+			}
+			// document.getElementById('MyPi_parse_btn').parentNode.dispatchEvent(new Event('submit'));
+			document.getElementById('MyPi_parse_btn').click();
+			out = document.getElementById('MyPi_result').innerHTML + out;
+			document.getElementById('MyPi_result').innerHTML = out;
+
+			document.getElementById('bin_install_result').innerHTML = out;
+		}
+		document.getElementById('bin_install').addEventListener('submit', function (e) {
+			e.preventDefault();
+			e.target.checkValidity();
+			bin_install_parse(e.target);
+			if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+				&& (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+				&& (window.location.port !== '80' && window.location.port !== '443')) {
+				fetch(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/form', {
+					method: 'POST',
+					body: document.getElementById('MyPi_result').innerHTML.replace(/install /g, '')
+				})
+					.then(response => response.text())
+					.then(result => {
+						document.getElementById('bin_install_server_response').innerHTML = result;
+					})
+					.catch(error => {
+						document.getElementById('bin_install_server_response').innerHTML = error;
+					});
+			}
+		});
+	</script>
+</div>
+<div class="d-none subcmd-container-target" id="target_mesure_container">
+	<form id="bin_mesure">
+		<h2>mesure form</h2>
+		<div class="form-group">
+			<label for="target" class="form-label">target</label>
+			<span class="input-help">mesure what</span>
+			<select pa-type="pos" name="target" id="target" required class="form-select">
+
+				<option value="cpu">cpu</option>
+				<option value="gpu">gpu</option>
+				<option value="ram">ram</option>
+			</select>
+		</div><button id="bin_mesure_parse_btn">Parse</button>
+		<pre id="bin_mesure_result"></pre>
+		<pre id="bin_mesure_server_response"></pre>
+	</form>
+	<div id="_subcommands">
+		<h3>Subcommand forms</h3>
+		<div class="d-none subcmd-container-target" id="target_cpu_container">
+			<form id="bin__mesure_cpu">
+				<h2>cpu form</h2>
+				<div class="form-group">
+					<label for="target" class="form-label">target</label>
+					<span class="input-help">cpu mesure</span>
+					<select pa-type="pos" name="target" id="target" required class="form-select">
+
+						<option value="temperature">temperature</option>
+						<option value="temp">temp</option>
+						<option value="voltage">voltage</option>
+						<option value="volt">volt</option>
+						<option value="frequency">frequency</option>
+						<option value="freq">freq</option>
+						<option value="clock">clock</option>
+						<option value="ram">ram</option>
+						<option value="mem">mem</option>
+						<option value="memory">memory</option>
+					</select>
+				</div><button id="bin__mesure_cpu_parse_btn">Parse</button>
+				<pre id="bin__mesure_cpu_result"></pre>
+				<pre id="bin__mesure_cpu_server_response"></pre>
+			</form>
+			<script type="text/javascript">
+				function bin__mesure_cpu_parse(__form) {
+					let bin__mesure_cpu_frm = new FormData(__form);
+					let out = '';
+					for (const inp of bin__mesure_cpu_frm.keys()) {
+						const ielt = document.getElementById(inp);
+						switch (ielt.getAttribute('pa-type')) {
+							case 'pos':
+								if (/[\s!@#$%^&*()_+=[\]{};':"\|,.<>/?]/.test(bin__mesure_cpu_frm.get(inp))) {
+									out += ' "' + bin__mesure_cpu_frm.get(inp) + '"';
+								} else {
+									out += ' ' + bin__mesure_cpu_frm.get(inp);
+								}
+								break;
+							case 'opt':
+								if (bin__mesure_cpu_frm.get(inp) !== '') {
+									if (ielt.hasAttribute('pa-repeat')) {
+										for (const val of bin__mesure_cpu_frm.get(inp).split(`
+`)) {
+											out += ' --' + inp + ' "' + val + '"';
+										}
+									} else {
+										out += ' --' + inp + ' "' + bin__mesure_cpu_frm.get(inp) + '"';
+									}
+								}
+								break;
+							case 'flag':
+								if (ielt.checked === true) {
+									out += ' --' + inp;
+								} else {
+									out += ' --no-' + inp;
+								}
+								break;
+						}
+					}
+					// document.getElementById('bin_mesure_parse_btn').parentNode.dispatchEvent(new Event('submit'));
+					document.getElementById('bin_mesure_parse_btn').click();
+					out = document.getElementById('bin_mesure_result').innerHTML + out;
+					document.getElementById('bin_mesure_result').innerHTML = out;
+
+					document.getElementById('bin__mesure_cpu_result').innerHTML = out;
+				}
+				document.getElementById('bin__mesure_cpu').addEventListener('submit', function (e) {
+					e.preventDefault();
+					e.target.checkValidity();
+					bin__mesure_cpu_parse(e.target);
+					if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+						&& (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+						&& (window.location.port !== '80' && window.location.port !== '443')) {
+						fetch(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/form', {
+							method: 'POST',
+							body: document.getElementById('bin_mesure_result').innerHTML.replace(/cpu /g, '')
+						})
+							.then(response => response.text())
+							.then(result => {
+								document.getElementById('bin__mesure_cpu_server_response').innerHTML = result;
+							})
+							.catch(error => {
+								document.getElementById('bin__mesure_cpu_server_response').innerHTML = error;
+							});
+					}
+				});
+			</script>
+		</div>
+		<div class="d-none subcmd-container-target" id="target_gpu_container">
+			<form id="bin__mesure_gpu">
+				<h2>gpu form</h2>
+				<div class="form-group">
+					<label for="target" class="form-label">target</label>
+					<span class="input-help">cpu mesure</span>
+					<select pa-type="pos" name="target" id="target" required class="form-select">
+
+						<option value="ram">ram</option>
+						<option value="voltage">voltage</option>
+						<option value="volt">volt</option>
+						<option value="frequency">frequency</option>
+						<option value="freq">freq</option>
+						<option value="clock">clock</option>
+					</select>
+				</div><button id="bin__mesure_gpu_parse_btn">Parse</button>
+				<pre id="bin__mesure_gpu_result"></pre>
+				<pre id="bin__mesure_gpu_server_response"></pre>
+			</form>
+			<script type="text/javascript">
+				function bin__mesure_gpu_parse(__form) {
+					let bin__mesure_gpu_frm = new FormData(__form);
+					let out = '';
+					for (const inp of bin__mesure_gpu_frm.keys()) {
+						const ielt = document.getElementById(inp);
+						switch (ielt.getAttribute('pa-type')) {
+							case 'pos':
+								if (/[\s!@#$%^&*()_+=[\]{};':"\|,.<>/?]/.test(bin__mesure_gpu_frm.get(inp))) {
+									out += ' "' + bin__mesure_gpu_frm.get(inp) + '"';
+								} else {
+									out += ' ' + bin__mesure_gpu_frm.get(inp);
+								}
+								break;
+							case 'opt':
+								if (bin__mesure_gpu_frm.get(inp) !== '') {
+									if (ielt.hasAttribute('pa-repeat')) {
+										for (const val of bin__mesure_gpu_frm.get(inp).split(`
+`)) {
+											out += ' --' + inp + ' "' + val + '"';
+										}
+									} else {
+										out += ' --' + inp + ' "' + bin__mesure_gpu_frm.get(inp) + '"';
+									}
+								}
+								break;
+							case 'flag':
+								if (ielt.checked === true) {
+									out += ' --' + inp;
+								} else {
+									out += ' --no-' + inp;
+								}
+								break;
+						}
+					}
+					// document.getElementById('bin_mesure_parse_btn').parentNode.dispatchEvent(new Event('submit'));
+					document.getElementById('bin_mesure_parse_btn').click();
+					out = document.getElementById('bin_mesure_result').innerHTML + out;
+					document.getElementById('bin_mesure_result').innerHTML = out;
+
+					document.getElementById('bin__mesure_gpu_result').innerHTML = out;
+				}
+				document.getElementById('bin__mesure_gpu').addEventListener('submit', function (e) {
+					e.preventDefault();
+					e.target.checkValidity();
+					bin__mesure_gpu_parse(e.target);
+					if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+						&& (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+						&& (window.location.port !== '80' && window.location.port !== '443')) {
+						fetch(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/form', {
+							method: 'POST',
+							body: document.getElementById('bin_mesure_result').innerHTML.replace(/gpu /g, '')
+						})
+							.then(response => response.text())
+							.then(result => {
+								document.getElementById('bin__mesure_gpu_server_response').innerHTML = result;
+							})
+							.catch(error => {
+								document.getElementById('bin__mesure_gpu_server_response').innerHTML = error;
+							});
+					}
+				});
+			</script>
+		</div>
+		<div class="d-none subcmd-container-target" id="target_ram_container">
+			<form id="bin__mesure_ram">
+				<h2>ram form</h2>
+				<div class="form-group">
+					<label for="target" class="form-label">target</label>
+					<span class="input-help">ram mesure</span>
+					<select pa-type="pos" name="target" id="target" class="form-select">
+
+						<option value="cpu">cpu</option>
+						<option value="arm">arm</option>
+						<option value="gpu">gpu</option>
+					</select>
+				</div><button id="bin__mesure_ram_parse_btn">Parse</button>
+				<pre id="bin__mesure_ram_result"></pre>
+				<pre id="bin__mesure_ram_server_response"></pre>
+			</form>
+			<script type="text/javascript">
+				function bin__mesure_ram_parse(__form) {
+					let bin__mesure_ram_frm = new FormData(__form);
+					let out = '';
+					for (const inp of bin__mesure_ram_frm.keys()) {
+						const ielt = document.getElementById(inp);
+						switch (ielt.getAttribute('pa-type')) {
+							case 'pos':
+								if (/[\s!@#$%^&*()_+=[\]{};':"\|,.<>/?]/.test(bin__mesure_ram_frm.get(inp))) {
+									out += ' "' + bin__mesure_ram_frm.get(inp) + '"';
+								} else {
+									out += ' ' + bin__mesure_ram_frm.get(inp);
+								}
+								break;
+							case 'opt':
+								if (bin__mesure_ram_frm.get(inp) !== '') {
+									if (ielt.hasAttribute('pa-repeat')) {
+										for (const val of bin__mesure_ram_frm.get(inp).split(`
+`)) {
+											out += ' --' + inp + ' "' + val + '"';
+										}
+									} else {
+										out += ' --' + inp + ' "' + bin__mesure_ram_frm.get(inp) + '"';
+									}
+								}
+								break;
+							case 'flag':
+								if (ielt.checked === true) {
+									out += ' --' + inp;
+								} else {
+									out += ' --no-' + inp;
+								}
+								break;
+						}
+					}
+					// document.getElementById('bin_mesure_parse_btn').parentNode.dispatchEvent(new Event('submit'));
+					document.getElementById('bin_mesure_parse_btn').click();
+					out = document.getElementById('bin_mesure_result').innerHTML + out;
+					document.getElementById('bin_mesure_result').innerHTML = out;
+
+					document.getElementById('bin__mesure_ram_result').innerHTML = out;
+				}
+				document.getElementById('bin__mesure_ram').addEventListener('submit', function (e) {
+					e.preventDefault();
+					e.target.checkValidity();
+					bin__mesure_ram_parse(e.target);
+					if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+						&& (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+						&& (window.location.port !== '80' && window.location.port !== '443')) {
+						fetch(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/form', {
+							method: 'POST',
+							body: document.getElementById('bin_mesure_result').innerHTML.replace(/ram /g, '')
+						})
+							.then(response => response.text())
+							.then(result => {
+								document.getElementById('bin__mesure_ram_server_response').innerHTML = result;
+							})
+							.catch(error => {
+								document.getElementById('bin__mesure_ram_server_response').innerHTML = error;
+							});
+					}
+				});
+			</script>
+		</div>
+		<script>
+			document.getElementById("target").addEventListener("change", function () {
+				var val = this.value;
+				document.querySelectorAll(".subcmd-container-target").forEach(function (el) {
+					el.classList.add("d-none");
+				});
+				var subcmd = document.getElementById("target_" + val + "_container").classList.remove("d-none");
+			});
+		</script>
+	</div>
+</div>
+<script type="text/javascript">
+	function bin_mesure_parse(__form) {
+		let bin_mesure_frm = new FormData(__form);
+		let out = '';
+		for (const inp of bin_mesure_frm.keys()) {
+			const ielt = document.getElementById(inp);
+			switch (ielt.getAttribute('pa-type')) {
+				case 'pos':
+					if (/[\s!@#$%^&*()_+=[\]{};':"\|,.<>/?]/.test(bin_mesure_frm.get(inp))) {
+						out += ' "' + bin_mesure_frm.get(inp) + '"';
+					} else {
+						out += ' ' + bin_mesure_frm.get(inp);
+					}
+					break;
+				case 'opt':
+					if (bin_mesure_frm.get(inp) !== '') {
+						if (ielt.hasAttribute('pa-repeat')) {
+							for (const val of bin_mesure_frm.get(inp).split(`
+`)) {
+								out += ' --' + inp + ' "' + val + '"';
+							}
+						} else {
+							out += ' --' + inp + ' "' + bin_mesure_frm.get(inp) + '"';
+						}
+					}
+					break;
+				case 'flag':
+					if (ielt.checked === true) {
+						out += ' --' + inp;
+					} else {
+						out += ' --no-' + inp;
+					}
+					break;
+			}
+		}
+		// document.getElementById('MyPi_parse_btn').parentNode.dispatchEvent(new Event('submit'));
+		document.getElementById('MyPi_parse_btn').click();
+		out = document.getElementById('MyPi_result').innerHTML + out;
+		document.getElementById('MyPi_result').innerHTML = out;
+
+		document.getElementById('bin_mesure_result').innerHTML = out;
+	}
+	document.getElementById('bin_mesure').addEventListener('submit', function (e) {
+		e.preventDefault();
+		e.target.checkValidity();
+		bin_mesure_parse(e.target);
+		if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+			&& (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+			&& (window.location.port !== '80' && window.location.port !== '443')) {
+			fetch(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/form', {
+				method: 'POST',
+				body: document.getElementById('MyPi_result').innerHTML.replace(/mesure /g, '')
+			})
+				.then(response => response.text())
+				.then(result => {
+					document.getElementById('bin_mesure_server_response').innerHTML = result;
+				})
+				.catch(error => {
+					document.getElementById('bin_mesure_server_response').innerHTML = error;
+				});
+		}
+	});
+</script>
+</div>
+<div class="d-none subcmd-container-target" id="target_nfs-export_container">
+	<form id="bin_nfs_export">
+		<h2>nfs-export form</h2>
+		<div class="form-group">
+			<label for="config" class="form-label">config</label>
+			<span class="input-help">config file path</span>
+			<input class="form-control" pa-type="opt" name="config" id="config" type="text" value="__home__/.config/MyPi" />
+		</div>
+		<div class="form-group">
+			<label for="export" class="form-label">export</label>
+			<span class="input-help">/etc/exports entry</span>
+			<textarea pa-type="opt" name="export" id="export" type="text" pa-repeat class="form-control"></textarea>
+		</div>
+		<div class="form-group">
+			<label for="directory" class="form-label">directory</label>
+			<span class="input-help">The directory that you want to share via NFS.</span>
+			<textarea pa-type="opt" name="directory" id="directory" type="text" pa-repeat class="form-control"></textarea>
+		</div>
+		<div class="form-group">
+			<label for="host" class="form-label">host</label>
+			<span class="input-help">IP address or hostname of the client that you want to grant access </span>
+			<textarea pa-type="opt" name="host" id="host" type="text" pa-repeat class="form-control"></textarea>
+		</div>
+		<div class="form-group">
+			<label for="options" class="form-label">options</label>
+			<span class="input-help">The options for the NFS share</span>
+			<textarea pa-type="opt" name="options" id="options" type="text" pa-repeat class="form-control"></textarea>
+		</div>
+		<div class="form-check">
+			<label for="use-config" class="form-check-label">use-config</label>
+			<i class="input-help">use a config file</i>
+			<input class="form-check-input" type="checkbox" role="switch" name="use-config" id="use-config" value="use-config"
+				pa-type="flag" checked />
+		</div><button id="bin_nfs_export_parse_btn">Parse</button>
+		<pre id="bin_nfs_export_result"></pre>
+		<pre id="bin_nfs_export_server_response"></pre>
+	</form>
+	<script type="text/javascript">
+		function bin_nfs_export_parse(__form) {
+			let bin_nfs_export_frm = new FormData(__form);
+			let out = '';
+			for (const inp of bin_nfs_export_frm.keys()) {
+				const ielt = document.getElementById(inp);
+				switch (ielt.getAttribute('pa-type')) {
+					case 'pos':
+						if (/[\s!@#$%^&*()_+=[\]{};':"\|,.<>/?]/.test(bin_nfs_export_frm.get(inp))) {
+							out += ' "' + bin_nfs_export_frm.get(inp) + '"';
+						} else {
+							out += ' ' + bin_nfs_export_frm.get(inp);
+						}
+						break;
+					case 'opt':
+						if (bin_nfs_export_frm.get(inp) !== '') {
+							if (ielt.hasAttribute('pa-repeat')) {
+								for (const val of bin_nfs_export_frm.get(inp).split(`
+`)) {
+									out += ' --' + inp + ' "' + val + '"';
+								}
+							} else {
+								out += ' --' + inp + ' "' + bin_nfs_export_frm.get(inp) + '"';
+							}
+						}
+						break;
+					case 'flag':
+						if (ielt.checked === true) {
+							out += ' --' + inp;
+						} else {
+							out += ' --no-' + inp;
+						}
+						break;
+				}
+			}
+			// document.getElementById('MyPi_parse_btn').parentNode.dispatchEvent(new Event('submit'));
+			document.getElementById('MyPi_parse_btn').click();
+			out = document.getElementById('MyPi_result').innerHTML + out;
+			document.getElementById('MyPi_result').innerHTML = out;
+
+			document.getElementById('bin_nfs_export_result').innerHTML = out;
+		}
+		document.getElementById('bin_nfs_export').addEventListener('submit', function (e) {
+			e.preventDefault();
+			e.target.checkValidity();
+			bin_nfs_export_parse(e.target);
+			if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+				&& (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+				&& (window.location.port !== '80' && window.location.port !== '443')) {
+				fetch(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/form', {
+					method: 'POST',
+					body: document.getElementById('MyPi_result').innerHTML.replace(/nfs-export /g, '')
+				})
+					.then(response => response.text())
+					.then(result => {
+						document.getElementById('bin_nfs_export_server_response').innerHTML = result;
+					})
+					.catch(error => {
+						document.getElementById('bin_nfs_export_server_response').innerHTML = error;
+					});
+			}
+		});
+	</script>
+</div>
+<div class="d-none subcmd-container-target" id="target_updater_container">
+	<form id="bin_updater">
+		<h2>updater form</h2>
+		<div class="form-group">
+			<label for="config" class="form-label">config</label>
+			<span class="input-help">config file path</span>
+			<input class="form-control" pa-type="opt" name="config" id="config" type="text" value="__home__/.config/MyPi" />
+		</div>
+		<div class="form-group">
+			<label for="shutdown" class="form-label">shutdown</label>
+			<span class="input-help">shutdown</span>
+			<input class="form-control" pa-type="opt" name="shutdown" id="shutdown" type="text" />
+		</div>
+		<div class="form-check">
+			<label for="use-config" class="form-check-label">use-config</label>
+			<i class="input-help">use a config file</i>
+			<input class="form-check-input" type="checkbox" role="switch" name="use-config" id="use-config" value="use-config"
+				pa-type="flag" checked />
+		</div>
+		<div class="form-check">
+			<label for="apt" class="form-check-label">apt</label>
+			<i class="input-help">update apt</i>
+			<input class="form-check-input" type="checkbox" role="switch" name="apt" id="apt" value="apt" pa-type="flag"
+				checked />
+		</div>
+		<div class="form-check">
+			<label for="git" class="form-check-label">git</label>
+			<i class="input-help">update git repo</i>
+			<input class="form-check-input" type="checkbox" role="switch" name="git" id="git" value="git" pa-type="flag"
+				checked />
+		</div>
+		<div class="form-check">
+			<label for="docker" class="form-check-label">docker</label>
+			<i class="input-help">pull docker images</i>
+			<input class="form-check-input" type="checkbox" role="switch" name="docker" id="docker" value="docker"
+				pa-type="flag" checked />
+		</div>
+		<div class="form-check">
+			<label for="dist-upgrade" class="form-check-label">dist-upgrade</label>
+			<i class="input-help">apt dist-upgrade</i>
+			<input class="form-check-input" type="checkbox" role="switch" name="dist-upgrade" id="dist-upgrade"
+				value="dist-upgrade" pa-type="flag" checked />
+		</div>
+		<div class="form-check">
+			<label for="apt-clean" class="form-check-label">apt-clean</label>
+			<i class="input-help">autoremove && clean</i>
+			<input class="form-check-input" type="checkbox" role="switch" name="apt-clean" id="apt-clean" value="apt-clean"
+				pa-type="flag" checked />
+		</div>
+		<div class="form-check">
+			<label for="reboot" class="form-check-label">reboot</label>
+			<i class="input-help">reboot</i>
+			<input class="form-check-input" type="checkbox" role="switch" name="reboot" id="reboot" value="reboot"
+				pa-type="flag" checked />
+		</div><button id="bin_updater_parse_btn">Parse</button>
+		<pre id="bin_updater_result"></pre>
+		<pre id="bin_updater_server_response"></pre>
+	</form>
+	<script type="text/javascript">
+		function bin_updater_parse(__form) {
+			let bin_updater_frm = new FormData(__form);
+			let out = '';
+			for (const inp of bin_updater_frm.keys()) {
+				const ielt = document.getElementById(inp);
+				switch (ielt.getAttribute('pa-type')) {
+					case 'pos':
+						if (/[\s!@#$%^&*()_+=[\]{};':"\|,.<>/?]/.test(bin_updater_frm.get(inp))) {
+							out += ' "' + bin_updater_frm.get(inp) + '"';
+						} else {
+							out += ' ' + bin_updater_frm.get(inp);
+						}
+						break;
+					case 'opt':
+						if (bin_updater_frm.get(inp) !== '') {
+							if (ielt.hasAttribute('pa-repeat')) {
+								for (const val of bin_updater_frm.get(inp).split(`
+`)) {
+									out += ' --' + inp + ' "' + val + '"';
+								}
+							} else {
+								out += ' --' + inp + ' "' + bin_updater_frm.get(inp) + '"';
+							}
+						}
+						break;
+					case 'flag':
+						if (ielt.checked === true) {
+							out += ' --' + inp;
+						} else {
+							out += ' --no-' + inp;
+						}
+						break;
+				}
+			}
+			// document.getElementById('MyPi_parse_btn').parentNode.dispatchEvent(new Event('submit'));
+			document.getElementById('MyPi_parse_btn').click();
+			out = document.getElementById('MyPi_result').innerHTML + out;
+			document.getElementById('MyPi_result').innerHTML = out;
+
+			document.getElementById('bin_updater_result').innerHTML = out;
+		}
+		document.getElementById('bin_updater').addEventListener('submit', function (e) {
+			e.preventDefault();
+			e.target.checkValidity();
+			bin_updater_parse(e.target);
+			if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+				&& (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+				&& (window.location.port !== '80' && window.location.port !== '443')) {
+				fetch(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/form', {
+					method: 'POST',
+					body: document.getElementById('MyPi_result').innerHTML.replace(/updater /g, '')
+				})
+					.then(response => response.text())
+					.then(result => {
+						document.getElementById('bin_updater_server_response').innerHTML = result;
+					})
+					.catch(error => {
+						document.getElementById('bin_updater_server_response').innerHTML = error;
+					});
+			}
+		});
+	</script>
+</div>
+<script>
+	document.getElementById("target").addEventListener("change", function () {
+		var val = this.value;
+		document.querySelectorAll(".subcmd-container-target").forEach(function (el) {
+			el.classList.add("d-none");
+		});
+		var subcmd = document.getElementById("target_" + val + "_container").classList.remove("d-none");
+	});
+</script>
+<script type="text/javascript">
+	function MyPi_parse(__form) {
+		let MyPi_frm = new FormData(__form);
+		let out = 'MyPi';
+		for (const inp of MyPi_frm.keys()) {
+			const ielt = document.getElementById(inp);
+			switch (ielt.getAttribute('pa-type')) {
+				case 'pos':
+					if (/[\s!@#$%^&*()_+=[\]{};':"\|,.<>/?]/.test(MyPi_frm.get(inp))) {
+						out += ' "' + MyPi_frm.get(inp) + '"';
+					} else {
+						out += ' ' + MyPi_frm.get(inp);
+					}
+					break;
+				case 'opt':
+					if (MyPi_frm.get(inp) !== '') {
+						if (ielt.hasAttribute('pa-repeat')) {
+							for (const val of MyPi_frm.get(inp).split(`
+`)) {
+								out += ' --' + inp + ' "' + val + '"';
+							}
+						} else {
+							out += ' --' + inp + ' "' + MyPi_frm.get(inp) + '"';
+						}
+					}
+					break;
+				case 'flag':
+					if (ielt.checked === true) {
+						out += ' --' + inp;
+					} else {
+						out += ' --no-' + inp;
+					}
+					break;
+			}
+		}
+		document.getElementById('MyPi_result').innerHTML = out;
+	}
+	document.getElementById('MyPi').addEventListener('submit', function (e) {
+		e.preventDefault();
+		e.target.checkValidity();
+		MyPi_parse(e.target);
+		if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+			&& (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+			&& (window.location.port !== '80' && window.location.port !== '443')) {
+			fetch(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/form', {
+				method: 'POST',
+				body: document.getElementById('_result').innerHTML.replace(/MyPi /g, '')
+			})
+				.then(response => response.text())
+				.then(result => {
+					document.getElementById('MyPi_server_response').innerHTML = result;
+				})
+				.catch(error => {
+					document.getElementById('MyPi_server_response').innerHTML = error;
+				});
+		}
+	});
+</script>
